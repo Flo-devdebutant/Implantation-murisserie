@@ -1,0 +1,5 @@
+# Clés de compte de service Firebase : ne jamais les commiter
+*firebase-adminsdk*.json
+*-sa.json
+.firebase/
+firebase-debug.log
