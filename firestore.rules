@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    // qui peut saisir et corriger
+    function redacteur() {
+      return request.auth != null && request.auth.token.email in [
+        'florian@murisserie.invalid',
+        'seb@murisserie.invalid',
+        'sofia@murisserie.invalid'
+      ];
+    }
+
+    // qui peut seulement consulter, imprimer et exporter
+    function lecteur() {
+      return request.auth != null && request.auth.token.email in [
+        'laura@murisserie.invalid'
+      ];
+    }
+
+    // un mois ne peut être remplacé que par une révision strictement plus
+    // récente : aucun appareil ne peut donc écraser une saisie qu'il n'a
+    // pas encore vue, même après une longue coupure réseau
+    function revisionEnAvance() {
+      return !('rev' in resource.data) || request.resource.data.rev > resource.data.rev;
+    }
+
+    match /murisserieRooms/{salle} {
+      allow read:  if (redacteur() || lecteur()) && salle.matches('^[A-Z2-9]{8}$');
+      allow write: if redacteur() && salle.matches('^[A-Z2-9]{8}$');
+      match /mois/{mois} {
+        allow read:   if redacteur() || lecteur();
+        allow create: if redacteur();
+        allow update: if redacteur() && revisionEnAvance();
+      }
+    }
+  }
+}
