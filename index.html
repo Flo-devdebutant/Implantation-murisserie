@@ -688,23 +688,378 @@ details.aide-pliante .contenu{font-size:.85rem;color:var(--encre-doux);margin-to
   .produits .badge{font-size:7.4pt}
 }
 </style>
+
+<style>
+/* =========================================================================
+   INTERFACE (écran seulement)
+   Reprise des principes de l'application Mehadrin QC, adaptés aux
+   mûrisseries :
+     — un téléphone tenu d'une main sur le quai : onglets en bas de l'écran,
+       cibles tactiles d'au moins 44 px, bouton Enregistrer toujours à portée ;
+     — un ordinateur au bureau : onglets en haut, saisie et plan côte à côte.
+   La couleur ne porte jamais seule une information : un mot ou une forme
+   l'accompagne toujours.
+   Tout ce bloc est réservé à l'écran : la feuille imprimée, réglée au
+   millimètre plus haut, ne change pas. Les retouches des cartes de chambre
+   visent « #pane-jour » : le bloc de mesure de l'impression (#mesure), qui
+   se trouve hors de cet onglet, n'en est donc pas affecté.
+   ========================================================================= */
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;vertical-align:-.2em}
+
+@media screen{
+  :root{
+    --fond:#F1F4F0;
+    --trait-2:#E3E8E1;
+    --encre-3:#5F6B62;
+    --vert:#2C5A38;
+    --vert-h:#234A2D;
+    --vert-teinte:#E5EFE7;
+    --anneau:0 0 0 3px rgba(44,90,56,.22);
+    --ombre-1:0 1px 2px rgba(16,26,18,.05);
+    --ombre-2:0 1px 3px rgba(16,26,18,.06),0 10px 24px -12px rgba(16,26,18,.18);
+    --ombre-3:0 16px 40px -10px rgba(16,26,18,.30);
+    --tete-h:62px;
+    --barre-h:66px;
+    --sur:env(safe-area-inset-bottom,0px);
+  }
+  body{background:var(--fond);padding:0}
+  .enveloppe{padding:0 16px 28px}
+  :focus-visible{outline:none;box-shadow:var(--anneau);border-radius:8px}
+
+  /* ---------- barre du haut ---------- */
+  .entete{
+    position:sticky;top:0;z-index:45;
+    display:flex;align-items:center;gap:14px;
+    min-height:var(--tete-h);margin:0 -16px 14px;padding:10px 16px;
+    background:rgba(241,244,240,.92);color:var(--encre);
+    -webkit-backdrop-filter:saturate(1.5) blur(14px);backdrop-filter:saturate(1.5) blur(14px);
+    border-radius:0;border-bottom:1px solid var(--trait-2);box-shadow:none;
+  }
+  .marque{display:flex;align-items:center;gap:11px;min-width:0}
+  .logo{
+    width:38px;height:38px;flex:0 0 38px;border-radius:11px;
+    display:inline-flex;align-items:center;justify-content:center;
+    background:linear-gradient(150deg,#3A7048,var(--avocat-fonce));color:#fff;
+    box-shadow:inset 0 -2px 0 rgba(0,0,0,.18),var(--ombre-1);
+  }
+  .logo .ico{width:22px;height:22px;stroke-width:1.8}
+  .marque-texte{min-width:0}
+  .entete .eyebrow{font-size:.66rem;letter-spacing:.12em;color:var(--gris);margin:0 0 1px}
+  .entete h1{
+    font-family:inherit;font-size:1.06rem;font-weight:750;letter-spacing:-.01em;line-height:1.2;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .entete .jour{flex:1;min-width:0;margin:0;font-size:.8rem;color:var(--encre-3);line-height:1.4}
+  @media(max-width:899px){.entete .jour{display:none}}
+  @media(min-width:900px){
+    .entete{padding:10px 24px;margin:0 -24px 16px}
+    .entete h1{font-size:1.14rem}
+  }
+  @media(min-width:900px){.enveloppe{padding:0 24px 32px}}
+
+  /* pastille de synchronisation */
+  .puce-sync{
+    margin-left:auto;flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;
+    height:32px;padding:0 12px;border-radius:999px;cursor:pointer;
+    font:inherit;font-size:.76rem;font-weight:650;white-space:nowrap;
+    border:1px solid var(--trait);background:var(--carte);color:var(--encre-doux);
+    transition:background .14s,border-color .14s;
+  }
+  .puce-sync .ico{width:15px;height:15px}
+  .puce-sync.ok{background:#E7F3EA;border-color:#B9DAC1;color:#1F5A31}
+  .puce-sync.attente{background:#FFF4DD;border-color:#EDD29A;color:#7A560E}
+  .puce-sync.erreur{background:var(--alerte-pale);border-color:#E2BDB6;color:var(--alerte)}
+  .puce-sync.lecture{background:#EEE8F4;border-color:#D6C7E4;color:#553A69}
+  .puce-sync:hover{filter:brightness(.97)}
+  @media(max-width:420px){.puce-sync{padding:0 10px}.entete .eyebrow{display:none}}
+
+  /* ---------- onglets ---------- */
+  .onglet{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+  .onglet .ico{width:19px;height:19px}
+  @media(min-width:900px){
+    .onglets{top:calc(var(--tete-h) + 8px);max-width:560px;border-radius:13px;padding:4px;
+      background:rgba(233,238,231,.94);border-color:var(--trait-2)}
+    .onglet{padding:9px 12px;border-radius:10px}
+  }
+  /* Téléphone et tablette : les onglets passent en bas, à portée du pouce. */
+  @media(max-width:899px){
+    body{padding-bottom:calc(var(--barre-h) + var(--sur) + 12px)}
+    .onglets{
+      position:fixed;top:auto;left:0;right:0;bottom:0;z-index:50;margin:0;
+      gap:0;padding:6px 8px calc(6px + var(--sur));border-radius:0;
+      border:0;border-top:1px solid var(--trait-2);
+      background:rgba(255,255,255,.95);box-shadow:0 -6px 20px -14px rgba(16,26,18,.35);
+    }
+    .onglet{flex-direction:column;gap:3px;padding:6px 4px 5px;font-size:.72rem;font-weight:650;border-radius:12px;background:none!important;box-shadow:none!important}
+    .onglet .ico{width:23px;height:23px;padding:3px 14px;box-sizing:content-box;border-radius:999px;transition:background .15s}
+    .onglet[aria-selected="true"]{color:var(--avocat-fonce)}
+    .onglet[aria-selected="true"] .ico{background:var(--vert-teinte)}
+    .onglet.archive[aria-selected="true"] .ico{background:#FBEFD5}
+  }
+
+  /* ---------- résumé de la journée ---------- */
+  .resume{margin-bottom:14px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+  .stat{
+    background:var(--carte);border:1px solid var(--trait-2);border-radius:13px;
+    padding:10px 12px 9px;box-shadow:var(--ombre-1);display:flex;flex-direction:column;gap:1px;min-width:0;
+  }
+  .stat-val{font-size:1.42rem;font-weight:750;line-height:1.1;letter-spacing:-.02em;font-family:inherit}
+  .stat-val small{font-size:.62em;font-weight:650;color:var(--gris);margin-left:1px}
+  .stat-val.petit{font-size:.92rem;line-height:1.55;color:#7A560E}
+  .stat-lib{display:flex;align-items:center;gap:6px;font-size:.76rem;color:var(--encre-3);white-space:nowrap}
+  .stat .point{width:9px;height:9px;border-radius:50%;flex:0 0 9px}
+  .point.vide{background:#C3CBC1}
+  .stat.palettes{background:var(--vert-teinte);border-color:#C9DDCD}
+  /* sur téléphone, une seule rangée qui défile plutôt que trois lignes de tuiles */
+  @media(max-width:699px){
+    .stats{display:flex;overflow-x:auto;scroll-snap-type:x proximity;margin:0 -16px;padding:2px 16px 4px;
+      scrollbar-width:none}
+    .stats::-webkit-scrollbar{display:none}
+    .stat{flex:0 0 auto;min-width:92px;scroll-snap-align:start}
+  }
+
+  /* ---------- panneaux et étapes ---------- */
+  .panneau{border-radius:16px;border-color:var(--trait-2);box-shadow:var(--ombre-2);padding:18px}
+  @media(min-width:700px){.panneau{padding:22px}}
+  .etape{padding:20px 0;border-top-color:var(--trait-2)}
+  .etape>h2{font-size:1rem;gap:10px}
+  .rang{
+    min-width:26px;height:26px;padding:0 7px;border-radius:999px;
+    display:inline-flex;align-items:center;justify-content:center;
+    background:var(--vert);color:#fff;font-family:inherit;font-size:.76rem;
+  }
+  .etiquette{font-size:.7rem;letter-spacing:.08em;color:var(--encre-3)}
+
+  /* rangée des chambres */
+  .rail{gap:8px}
+  .tuile{
+    height:66px;flex-direction:column;gap:2px;padding:0 2px 9px;border-radius:12px;
+    border-color:var(--trait);box-shadow:var(--ombre-1);
+  }
+  .tuile .t-num{font-size:1.28rem;line-height:1}
+  .tuile .t-sous{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    font-size:.64rem;font-weight:650;letter-spacing:.01em;color:var(--encre-3);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .tuile.hs .t-sous{color:var(--alerte)}
+  .tuile.requis .t-sous{color:var(--requis)}
+  .tuile[aria-pressed="true"] .t-sous{color:rgba(255,255,255,.85)}
+  .tuile::after{height:5px}
+  .legende{gap:4px 12px}
+
+  /* champs */
+  input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea{
+    min-height:44px;border-radius:11px;border-color:#D3DAD0;
+  }
+  input:focus,select:focus,textarea:focus{box-shadow:var(--anneau)}
+  .champ-icone{position:relative;display:block}
+  .champ-icone .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--gris);pointer-events:none}
+  .champ-icone input{padding-left:40px!important}
+
+  /* cases à cocher en pastilles */
+  .cases{gap:8px}
+  .case{min-height:42px;padding:8px 15px;border-color:#D3DAD0;box-shadow:var(--ombre-1)}
+  .case input{width:17px;height:17px}
+  .choix-mode .case{padding-left:13px}
+  .case.mode .point{width:10px;height:10px;border-radius:50%}
+  .case.mode.froid:has(input:checked){border-color:var(--froid);background:#DCEBF3;color:#22414D}
+  .case.mode.affinage:has(input:checked){border-color:var(--avocat);background:#D7ECDB;color:#1B3A23}
+  .case.mode.chauffe:has(input:checked){border-color:var(--mangue);background:#FBE0C2;color:#6E3606}
+  .case.mode.froid input{accent-color:var(--froid)}
+  .case.mode.chauffe input{accent-color:var(--mangue)}
+
+  /* blocs de saisie */
+  .variete{border-radius:13px;border-color:var(--trait-2);background:#FBFCFA}
+  .bloc-origine{border-radius:12px;border-color:var(--trait-2)}
+  .saisie-calibre{border-radius:12px}
+  .q input.qte{min-height:44px}
+  .ajout-proj{border-radius:12px;background:#F5F8F4;border-color:var(--trait-2)}
+  .avis,.erreurs{border-radius:11px}
+
+  /* ---------- boutons ---------- */
+  .bouton{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    min-height:46px;border-radius:12px;padding:11px 18px;
+  }
+  .bouton .ico{width:18px;height:18px}
+  .bouton.petit{min-height:38px;padding:7px 13px;border-radius:10px}
+  .bouton.petit .ico{width:16px;height:16px}
+  .bouton.secondaire{box-shadow:var(--ombre-1)}
+  .lien{gap:6px;min-height:34px;padding:7px 13px}
+  .lien .ico{width:15px;height:15px}
+  .lien.accent{color:var(--avocat-fonce);border-color:#B9D2BF;background:#F4F9F5}
+  .lien.accent:hover{background:var(--vert-teinte);border-color:var(--avocat)}
+  .ico-btn{
+    width:36px;height:36px;flex:0 0 36px;padding:0;
+    display:inline-flex;align-items:center;justify-content:center;
+    border:1px solid var(--trait);border-radius:10px;background:var(--carte);color:var(--encre-doux);
+    cursor:pointer;transition:background .14s,border-color .14s,color .14s;
+  }
+  .ico-btn .ico{width:17px;height:17px}
+  .ico-btn:hover{background:#F2F6F1;border-color:#BFC7BB;color:var(--encre)}
+  .ico-btn.danger{color:var(--alerte)}
+  .ico-btn.danger:hover{background:var(--alerte-pale);border-color:var(--alerte)}
+  .pousse{margin-left:auto}
+
+  /* barre d'enregistrement : reste à portée pendant qu'on descend dans le
+     formulaire, au-dessus des onglets sur téléphone */
+  .colonne-saisie .barre-enregistrer{
+    position:sticky;bottom:12px;z-index:6;
+    margin-top:18px;padding:10px;border:1px solid var(--trait-2);border-radius:15px;
+    background:rgba(255,255,255,.96);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    box-shadow:var(--ombre-3);
+  }
+  .barre-enregistrer .bouton{flex:1 1 170px}
+  .barre-enregistrer #btnAnnuler{flex:0 1 auto}
+  @media(max-width:899px){
+    .colonne-saisie .barre-enregistrer{bottom:calc(var(--barre-h) + var(--sur) + 10px)}
+  }
+  /* Sur ordinateur, la saisie reste en vue pendant qu'on parcourt le plan. */
+  @media(min-width:1080px){
+    #pane-jour .colonne-saisie{
+      position:sticky;top:calc(var(--tete-h) + 70px);
+      max-height:calc(100vh - var(--tete-h) - 86px);overflow:auto;overscroll-behavior:contain;
+    }
+    #pane-jour .colonne-saisie .barre-enregistrer{bottom:0}
+  }
+
+  /* bandeaux */
+  .bandeau-histo,.bandeau-modif{border-radius:12px;padding:11px 14px}
+  .verrou{border-radius:15px;border-left:4px solid #D9A441;box-shadow:var(--ombre-2)}
+  .verrou .bouton{min-height:42px}
+
+  /* ---------- plan du jour ---------- */
+  .exports{justify-content:space-between;gap:10px;margin-bottom:18px}
+  .groupe-exports,.groupe-jour{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  @media(max-width:560px){
+    .groupe-exports{width:100%}
+    .groupe-exports .bouton{flex:1 1 0;padding:7px 8px}
+  }
+  .plan-tete h2{font-size:1.12rem}
+  #pane-jour .chambre{border-radius:13px}
+  #pane-jour .chambre-tete .droite{align-items:center;gap:8px}
+  .actions-carte{display:inline-flex;gap:6px}
+  #pane-jour .chambre-tete .ico-btn{width:32px;height:32px;flex-basis:32px;border-radius:9px}
+  #pane-jour .chambre.inoccupee{background:rgba(255,255,255,.7)}
+
+  /* ---------- historique ---------- */
+  .sous-onglets{
+    display:inline-flex;gap:4px;padding:4px;margin-bottom:18px;border:1px solid var(--trait-2);
+    border-radius:13px;background:#EAEFE8;
+  }
+  .sous-onglet{
+    display:inline-flex;align-items:center;gap:7px;
+    padding:8px 16px;margin:0;border:0;border-radius:10px;
+  }
+  .sous-onglet .ico{width:17px;height:17px}
+  .sous-onglet[aria-selected="true"]{background:var(--carte);box-shadow:var(--ombre-1);border-bottom-color:transparent}
+  .jour-ligne{border-radius:14px;border-color:var(--trait-2);padding:14px 16px;box-shadow:var(--ombre-1)}
+  .jour-ligne.aujourdhui{border-left-width:4px}
+  .jour-actions .bouton .ico{order:0}
+  .jour-actions .bouton:first-child .ico{order:1}
+  .carte-analyse{border-radius:13px;border-color:var(--trait-2)}
+
+  /* ---------- réglages ---------- */
+  .carte-reglage{border-radius:15px;border-color:var(--trait-2);box-shadow:var(--ombre-1)}
+  .carte-reglage h3{gap:11px}
+  .ico-carte{
+    width:34px;height:34px;flex:0 0 34px;border-radius:10px;
+    display:inline-flex;align-items:center;justify-content:center;
+    background:var(--vert-teinte);color:var(--avocat-fonce);
+  }
+  .ico-carte .ico{width:18px;height:18px}
+  .carte-reglage h3 .pastille-etat{margin-left:auto}
+  .carte-reglage .desc{padding-left:45px}
+  @media(max-width:560px){.carte-reglage .desc{padding-left:0}}
+
+  /* ---------- fenêtre de confirmation ---------- */
+  .modale-boite{border-radius:18px;box-shadow:var(--ombre-3)}
+  .modale-actions .bouton{min-height:46px}
+  /* sur téléphone, elle monte du bas de l'écran, sous le pouce */
+  @media(max-width:600px){
+    .modale{align-items:flex-end;padding:0}
+    .modale-boite{max-width:none;border-radius:20px 20px 0 0;padding:22px 18px calc(18px + var(--sur));
+      max-height:88vh;animation:monte .22s ease}
+    .modale-boite::before{content:"";display:block;width:40px;height:4px;border-radius:2px;
+      background:#D3DAD0;margin:-8px auto 14px}
+    @keyframes monte{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+  }
+
+  /* notification : sur téléphone, en haut, sous la barre, pour ne jamais
+     masquer le bouton Enregistrer */
+  #toast{border-radius:12px;box-shadow:var(--ombre-3)}
+  @media(max-width:899px){
+    #toast{top:calc(var(--tete-h) + 10px);bottom:auto;transform:translateX(-50%) translateY(-10px)}
+    #toast.visible{transform:translateX(-50%) translateY(0)}
+  }
+  .d-court{display:none}
+  @media(max-width:520px){.d-long{display:none}.d-court{display:inline}.large-seul{display:none}}
+  .barre-enregistrer .bouton{font-size:.95rem}
+  .barre-enregistrer #btnAnnuler{padding-left:16px;padding-right:16px}
+  /* réglages : des cartes posées sur le fond, sans panneau autour */
+  #pane-reglages>.panneau{background:none;border:0;box-shadow:none;padding:0;max-width:880px}
+  #pane-reglages .carte-reglage{padding:18px 20px}
+}
+</style>
 </head>
 <body>
+<!-- Icônes au trait, dessinées une fois et reprises partout par <use> :
+     l'application reste un fichier unique, sans police d'icônes à charger. -->
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-avocat" viewBox="0 0 24 24"><path d="M12 2.5c3.4 0 5.4 4.6 6.3 8.6a6.4 6.4 0 1 1-12.6 0C6.6 7.1 8.6 2.5 12 2.5z"/><circle cx="12" cy="14.6" r="2.6"/></symbol>
+  <symbol id="i-jour" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><path d="M8.5 15.2l2.3 2.3 4.7-4.7"/></symbol>
+  <symbol id="i-histo" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.5"/><path d="M3.5 3.5v5h5"/><path d="M12 7.5V12l3.2 2"/></symbol>
+  <symbol id="i-reglages" viewBox="0 0 24 24"><path d="M4 6.5h9M17 6.5h3M4 12h3M11 12h9M4 17.5h11M19 17.5h1"/><circle cx="15" cy="6.5" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17.5" r="2"/></symbol>
+  <symbol id="i-modifier" viewBox="0 0 24 24"><path d="M15.8 4.2a2.3 2.3 0 0 1 3.3 3.3L8.3 18.3 4 19.5l1.2-4.3z"/><path d="M13.8 6.2l3.3 3.3"/></symbol>
+  <symbol id="i-echanger" viewBox="0 0 24 24"><path d="M7 3.5 3.5 7 7 10.5"/><path d="M3.5 7H16"/><path d="m17 13.5 3.5 3.5-3.5 3.5"/><path d="M20.5 17H8"/></symbol>
+  <symbol id="i-supprimer" viewBox="0 0 24 24"><path d="M4 6.5h16"/><path d="M9 6.5V4.5h6v2"/><path d="M6.3 6.5l.9 13a1.5 1.5 0 0 0 1.5 1.4h6.6a1.5 1.5 0 0 0 1.5-1.4l.9-13"/><path d="M10 11v5.5M14 11v5.5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-imprimer" viewBox="0 0 24 24"><path d="M6.5 9V3.5h11V9"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6.5 14h11v6.5h-11z"/></symbol>
+  <symbol id="i-excel" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M3.5 9h17M3.5 14.5h17M9.5 3.5v17"/></symbol>
+  <symbol id="i-word" viewBox="0 0 24 24"><path d="M14 3H6.5A2.5 2.5 0 0 0 4 5.5v13A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></symbol>
+  <symbol id="i-reprendre" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V5.5a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/></symbol>
+  <symbol id="i-vider" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m9 9 6 6M15 9l-6 6"/></symbol>
+  <symbol id="i-nuage" viewBox="0 0 24 24"><path d="M7 18.5a4.5 4.5 0 1 1 .8-8.9 6 6 0 0 1 11.4 1.9 3.5 3.5 0 0 1-1.2 7z"/></symbol>
+  <symbol id="i-cadenas" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10.5" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-telecharger" viewBox="0 0 24 24"><path d="M12 3.5v11.5M7.5 10.5 12 15l4.5-4.5M4.5 20.5h15"/></symbol>
+  <symbol id="i-envoyer" viewBox="0 0 24 24"><path d="M12 20.5V9M7.5 13.5 12 9l4.5 4.5M4.5 3.5h15"/></symbol>
+  <symbol id="i-chercher" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.3-4.3"/></symbol>
+  <symbol id="i-valider" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-utilisateur" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8v.01"/></symbol>
+  <symbol id="i-telephone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18h2"/></symbol>
+  <symbol id="i-base" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></symbol>
+  <symbol id="i-calendrier" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01"/></symbol>
+  <symbol id="i-courbe" viewBox="0 0 24 24"><path d="M3.5 3.5v17h17"/><path d="m7.5 15 4-4.5 3 3 5-6"/></symbol>
+  <symbol id="i-liste" viewBox="0 0 24 24"><path d="M9 6h11.5M9 12h11.5M9 18h11.5M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+  <symbol id="i-retour" viewBox="0 0 24 24"><path d="M19.5 12h-15M10.5 6l-6 6 6 6"/></symbol>
+  <symbol id="i-ouvrir" viewBox="0 0 24 24"><path d="M9 5.5 15.5 12 9 18.5"/></symbol>
+</svg>
 <div class="enveloppe">
 
   <header class="entete noprint">
-    <p class="eyebrow">Recettes de mûrisserie</p>
-    <h1 id="dateDuJour"></h1>
+    <div class="marque">
+      <span class="logo" aria-hidden="true"><svg class="ico"><use href="#i-avocat"/></svg></span>
+      <div class="marque-texte">
+        <p class="eyebrow">Recettes de mûrisserie</p>
+        <h1 id="dateDuJour"></h1>
+      </div>
+    </div>
     <p class="jour" id="etatDuJour"></p>
+    <button type="button" class="puce-sync" id="puceSync" hidden></button>
   </header>
 
-  <nav class="onglets noprint" role="tablist">
-    <button type="button" class="onglet" role="tab" data-onglet="jour" aria-selected="true">Aujourd'hui</button>
-    <button type="button" class="onglet" role="tab" data-onglet="histo" aria-selected="false">Historique</button>
-    <button type="button" class="onglet" role="tab" data-onglet="reglages" aria-selected="false">Réglages</button>
+  <nav class="onglets noprint" role="tablist" aria-label="Sections de l'application">
+    <button type="button" class="onglet" role="tab" data-onglet="jour" aria-selected="true"><svg class="ico" aria-hidden="true"><use href="#i-jour"/></svg><span class="lib">Aujourd'hui</span></button>
+    <button type="button" class="onglet" role="tab" data-onglet="histo" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-histo"/></svg><span class="lib">Historique</span></button>
+    <button type="button" class="onglet" role="tab" data-onglet="reglages" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-reglages"/></svg><span class="lib">Réglages</span></button>
   </nav>
 
   <div class="pane" id="pane-jour">
+  <div class="resume noprint" id="resumeJour"></div>
   <div id="zoneVerrou" hidden></div>
   <div class="colonnes">
 
@@ -780,10 +1135,10 @@ details.aide-pliante .contenu{font-size:.85rem;color:var(--encre-doux);margin-to
       <div class="etape" id="etapeConservation" hidden>
         <h2><span class="rang">4</span>Conservation</h2>
         <p class="aide">Une seule par chambre — cocher la nouvelle décoche la précédente.</p>
-        <div class="cases">
-          <label class="case"><input type="checkbox" class="cons" value="froid"><span>Froid</span></label>
-          <label class="case"><input type="checkbox" class="cons" value="affinage"><span>Affinage</span></label>
-          <label class="case"><input type="checkbox" class="cons" value="chauffe"><span>Chauffe</span></label>
+        <div class="cases choix-mode">
+          <label class="case mode froid"><input type="checkbox" class="cons" value="froid"><span class="point froid" aria-hidden="true"></span><span>Froid</span></label>
+          <label class="case mode affinage"><input type="checkbox" class="cons" value="affinage"><span class="point affinage" aria-hidden="true"></span><span>Affinage</span></label>
+          <label class="case mode chauffe"><input type="checkbox" class="cons" value="chauffe"><span class="point chauffe" aria-hidden="true"></span><span>Chauffe</span></label>
         </div>
         <div id="champsConservation"></div>
       </div>
@@ -796,7 +1151,7 @@ details.aide-pliante .contenu{font-size:.85rem;color:var(--encre-doux);margin-to
 
       <div id="erreurs"></div>
 
-      <div class="actions" id="barreActions">
+      <div class="actions barre-enregistrer" id="barreActions">
         <button type="button" class="bouton" id="btnEnregistrer">Enregistrer la chambre</button>
         <button type="button" class="bouton secondaire" id="btnAnnuler">Annuler</button>
       </div>
@@ -805,11 +1160,15 @@ details.aide-pliante .contenu{font-size:.85rem;color:var(--encre-doux);margin-to
     <!-- ============ PLAN DU JOUR ============ -->
     <section class="panneau colonne-plan">
       <div class="exports noprint">
-        <button type="button" class="bouton secondaire petit" id="btnPdf">PDF / Impression</button>
-        <button type="button" class="bouton secondaire petit" id="btnExcel">Excel</button>
-        <button type="button" class="bouton secondaire petit" id="btnWord">Word</button>
-        <button type="button" class="lien" id="btnRepriseJour">Reprendre une journée</button>
-        <button type="button" class="lien danger" id="btnViderJour">Vider la journée</button>
+        <div class="groupe-exports">
+          <button type="button" class="bouton secondaire petit" id="btnPdf"><svg class="ico" aria-hidden="true"><use href="#i-imprimer"/></svg>Imprimer<span class="large-seul">&nbsp;/ PDF</span></button>
+          <button type="button" class="bouton secondaire petit" id="btnExcel"><svg class="ico" aria-hidden="true"><use href="#i-excel"/></svg>Excel</button>
+          <button type="button" class="bouton secondaire petit" id="btnWord"><svg class="ico" aria-hidden="true"><use href="#i-word"/></svg>Word</button>
+        </div>
+        <div class="groupe-jour">
+          <button type="button" class="lien" id="btnRepriseJour"><svg class="ico" aria-hidden="true"><use href="#i-reprendre"/></svg>Reprendre une journée</button>
+          <button type="button" class="lien danger" id="btnViderJour"><svg class="ico" aria-hidden="true"><use href="#i-vider"/></svg>Vider la journée</button>
+        </div>
       </div>
       <div class="plan-tete">
         <h2>Implantation des mûrisseries</h2>
@@ -828,8 +1187,8 @@ details.aide-pliante .contenu{font-size:.85rem;color:var(--encre-doux);margin-to
   <div class="pane" id="pane-histo" hidden>
     <section class="panneau">
       <div class="sous-onglets noprint" role="tablist">
-        <button type="button" class="sous-onglet" role="tab" data-vue="jours" aria-selected="true">Journées</button>
-        <button type="button" class="sous-onglet" role="tab" data-vue="analyses" aria-selected="false">Analyses</button>
+        <button type="button" class="sous-onglet" role="tab" data-vue="jours" aria-selected="true"><svg class="ico" aria-hidden="true"><use href="#i-liste"/></svg>Journées</button>
+        <button type="button" class="sous-onglet" role="tab" data-vue="analyses" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-courbe"/></svg>Analyses</button>
       </div>
 
       <div id="vue-jours">
@@ -838,7 +1197,7 @@ details.aide-pliante .contenu{font-size:.85rem;color:var(--encre-doux);margin-to
         <div class="recherche">
           <label class="champ">
             <span class="etiquette">Rechercher</span>
-            <input type="text" id="rechercheJour" placeholder="Ex. lundi, 28/08, Camposol, Israël, Kent">
+            <span class="champ-icone"><svg class="ico" aria-hidden="true"><use href="#i-chercher"/></svg><input type="search" id="rechercheJour" placeholder="Ex. lundi, 28/08, Camposol, Israël, Kent"></span>
           </label>
           <label class="champ" style="flex:0 1 190px">
             <span class="etiquette">Aller à une date</span>
@@ -872,31 +1231,31 @@ details.aide-pliante .contenu{font-size:.85rem;color:var(--encre-doux);margin-to
     <section class="panneau">
 
       <div class="carte-reglage">
-        <h3><span class="pastille-etat" id="pastilleSync"></span>Synchronisation entre appareils</h3>
+        <h3><span class="ico-carte" aria-hidden="true"><svg class="ico"><use href="#i-nuage"/></svg></span>Synchronisation entre appareils<span class="pastille-etat" id="pastilleSync"></span></h3>
         <p class="desc">Partagez les mêmes journées entre le bureau, la tablette du quai et les téléphones. Un code relie les appareils entre eux ; sans code, rien n'est envoyé. L'historique est publié mois par mois : chaque enregistrement ne renvoie que le mois en cours.</p>
         <div id="carteSync"></div>
       </div>
 
       <div class="carte-reglage">
-        <h3>Jours non travaillés</h3>
+        <h3><span class="ico-carte" aria-hidden="true"><svg class="ico"><use href="#i-calendrier"/></svg></span>Jours non travaillés</h3>
         <p class="desc">Le dimanche est toujours chômé. Les jours fériés le sont par défaut : décochez ceux que vous travaillez. Un jour chômé est reconduit automatiquement depuis le dernier jour renseigné, en suivant les projections prévues.</p>
         <div id="carteChomes"></div>
       </div>
 
       <div class="carte-reglage">
-        <h3>Sauvegarde automatique</h3>
+        <h3><span class="ico-carte" aria-hidden="true"><svg class="ico"><use href="#i-base"/></svg></span>Sauvegarde automatique</h3>
         <p class="desc">Chaque modification est enregistrée immédiatement dans ce navigateur. Rien ne part sur Internet tant que la synchronisation n'est pas activée.</p>
         <div id="infosStockage"></div>
         <div class="actions" id="actionsSauvegarde" style="border:0;padding-top:14px;margin-top:6px">
-          <button type="button" class="bouton secondaire petit" id="btnSauvegarde">Exporter une sauvegarde</button>
-          <button type="button" class="bouton secondaire petit" id="btnRestaurer">Restaurer une sauvegarde</button>
+          <button type="button" class="bouton secondaire petit" id="btnSauvegarde"><svg class="ico" aria-hidden="true"><use href="#i-telecharger"/></svg>Exporter une sauvegarde</button>
+          <button type="button" class="bouton secondaire petit" id="btnRestaurer"><svg class="ico" aria-hidden="true"><use href="#i-envoyer"/></svg>Restaurer une sauvegarde</button>
           <input type="file" id="fichierRestaurer" accept="application/json,.json" hidden>
           <button type="button" class="lien danger" id="btnToutEffacer2">Effacer toutes les données</button>
         </div>
       </div>
 
       <div class="carte-reglage" id="carteInstall" hidden>
-        <h3>Installer l'application</h3>
+        <h3><span class="ico-carte" aria-hidden="true"><svg class="ico"><use href="#i-telephone"/></svg></span>Installer l'application</h3>
         <p class="desc">Ajoutez l'application à l'écran d'accueil : elle s'ouvre en plein écran, sans barre d'adresse.</p>
         <button type="button" class="bouton" id="btnInstaller" hidden>Installer sur cet appareil</button>
         <div id="aideInstallApple" hidden class="desc" style="margin:0">
@@ -908,7 +1267,7 @@ details.aide-pliante .contenu{font-size:.85rem;color:var(--encre-doux);margin-to
       </div>
 
       <div class="carte-reglage">
-        <h3>À propos</h3>
+        <h3><span class="ico-carte" aria-hidden="true"><svg class="ico"><use href="#i-info"/></svg></span>À propos</h3>
         <div id="infosAppli"></div>
       </div>
 
@@ -1020,7 +1379,7 @@ function isoDecale(iso,jours){const d=dateDe(iso);d.setDate(d.getDate()+jours);r
    joursChomes garde ces exceptions, date par date. */
 var CLE_CHOMES='murisserie.chomes.v1';
 var joursChomes=(function(){
-  try{return JSON.parse(localStorage.getItem(CLE_CHOMES))||{};}catch(e){return{};}
+  try{return nettoyerChomes(JSON.parse(localStorage.getItem(CLE_CHOMES)));}catch(e){return{};}
 })();
 function sauverChomes(){
   try{localStorage.setItem(CLE_CHOMES,JSON.stringify(joursChomes));}catch(e){}
@@ -1188,6 +1547,151 @@ let attente={};
 var modeExport=false;
 let brouillonProj={date:'',type:'',temperature:'',gazage:'',heure:''};
 
+/* =========================================================================
+   CONTRÔLE DES DONNÉES REÇUES
+   Les journées ne viennent pas seulement de ce formulaire : elles arrivent
+   aussi des autres appareils par la synchronisation, et d'un fichier de
+   sauvegarde qu'on restaure. Plusieurs de ces valeurs finissent dans le code
+   des boutons (onclick) ou dans des noms de classe : une date, une variété, un
+   calibre. Une valeur fabriquée pourrait alors faire exécuter n'importe quel
+   script sur tous les appareils de l'équipe. On ne garde donc que des valeurs
+   de forme connue : des dates ISO, des numéros de chambre, et les listes de
+   variétés, calibres et qualités de l'application.
+   ========================================================================= */
+function jourValide(iso){
+  return typeof iso==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(iso)&&!isNaN(dateDe(iso).getTime());
+}
+function dansListe(liste,v){return liste.some(function(x){return String(x)===String(v);});}
+/* garde les clés autorisées d'un objet, en supprimant les autres sur place */
+function filtrerCles(o,garder){
+  if(!o||typeof o!=='object')return;
+  Object.keys(o).forEach(function(k){if(!garder(k))delete o[k];});
+}
+/* Qualités d'un calibre : les lettres A à F, valeur entière positive ou null
+   (« quantité à confirmer »). */
+function nettoyerQualites(q){
+  if(!q||typeof q!=='object'||Array.isArray(q))return{};
+  const out={};
+  QUALITES.forEach(function(k){
+    if(!(k in q))return;
+    const v=q[k];
+    if(v===null)out[k]=null;
+    else{const n=Math.floor(Number(v));if(isFinite(n)&&n>0)out[k]=n;}
+  });
+  return out;
+}
+function nettoyerVariete(d,calibresPermis,parPoids){
+  if(!d||typeof d!=='object'){return{origines:[],parOrigine:{}};}
+  if(!Array.isArray(d.origines))d.origines=[];
+  d.origines=d.origines.filter(function(o,i,t){return typeof o==='string'&&o.trim()&&t.indexOf(o)===i;});
+  if(!d.parOrigine||typeof d.parOrigine!=='object')d.parOrigine={};
+  filtrerCles(d.parOrigine,function(o){return d.origines.indexOf(o)>=0;});
+  d.origines.forEach(function(o){
+    const po=d.parOrigine[o];
+    if(!po||typeof po!=='object'){d.parOrigine[o]={marques:'',calibres:{}};return;}
+    po.marques=(po.marques==null)?'':String(po.marques);
+    if(!po.calibres||typeof po.calibres!=='object')po.calibres={};
+    if(parPoids){
+      filtrerCles(po.calibres,function(p){return !!POIDS[p];});
+      Object.keys(po.calibres).forEach(function(p){
+        const c=po.calibres[p];
+        if(!c||typeof c!=='object'){delete po.calibres[p];return;}
+        filtrerCles(c,function(cal){return dansListe(POIDS[p].calibres,cal);});
+        Object.keys(c).forEach(function(cal){c[cal]=nettoyerQualites(c[cal]);});
+      });
+    }else{
+      filtrerCles(po.calibres,function(cal){return dansListe(calibresPermis,cal);});
+      Object.keys(po.calibres).forEach(function(cal){po.calibres[cal]=nettoyerQualites(po.calibres[cal]);});
+    }
+  });
+  return d;
+}
+/* Appliqué après la reprise des anciens formats : chaque champ est ramené à
+   une valeur que l'application sait afficher. */
+function assainirFiche(f){
+  f.chambre=Number(f.chambre);
+  if(!f.conservation||typeof f.conservation!=='object')f.conservation={type:'',temperature:'',gazage:'',depuis:''};
+  if(!f.identification||typeof f.identification!=='object')f.identification={avocat:false,mangue:false};
+  if(!ETATS[f.etat])f.etat='active';
+  ['etatNote','etatTemp','noteLibre','debut','autoDepuis'].forEach(function(k){
+    if(typeof f[k]!=='string')f[k]=(f[k]==null)?'':String(f[k]);
+  });
+  if(f.debut&&!jourValide(f.debut))f.debut='';
+  if(f.autoDepuis&&!jourValide(f.autoDepuis))f.autoDepuis='';
+  f.identification={avocat:!!f.identification.avocat,mangue:!!f.identification.mangue};
+  const c=f.conservation;
+  if(!CONSERVATION[c.type])c.type='';
+  ['temperature','gazage','depuis'].forEach(function(k){c[k]=(c[k]==null)?'':String(c[k]);});
+  f.buts=(Array.isArray(f.buts)?f.buts:[]).filter(function(b){return BUTS.indexOf(b)>=0;});
+  f.projection=(Array.isArray(f.projection)?f.projection:[]).filter(function(e){
+    return e&&typeof e==='object'&&jourValide(e.date)&&!!CONSERVATION[e.type];
+  }).map(function(e){
+    return{date:e.date,type:e.type,
+      temperature:(e.temperature==null)?'':String(e.temperature),
+      gazage:(e.gazage==null)?'':String(e.gazage),
+      heure:(typeof e.heure==='string'&&/^\d{2}:\d{2}$/.test(e.heure))?e.heure:''};
+  });
+  /* avocat : variétés connues seulement */
+  if(!f.avocat||typeof f.avocat!=='object')f.avocat={actif:false,varietes:[],data:{}};
+  f.avocat.actif=!!f.avocat.actif;
+  if(!f.avocat.data||typeof f.avocat.data!=='object')f.avocat.data={};
+  f.avocat.varietes=(Array.isArray(f.avocat.varietes)?f.avocat.varietes:[])
+    .filter(function(v,i,t){return VAR_AVOCAT.indexOf(v)>=0&&t.indexOf(v)===i;});
+  filtrerCles(f.avocat.data,function(v){return f.avocat.varietes.indexOf(v)>=0;});
+  f.avocat.varietes.forEach(function(v){f.avocat.data[v]=nettoyerVariete(f.avocat.data[v],CAL_AVOCAT,false);});
+  /* mangue : catégories et variétés connues seulement */
+  if(!f.mangue||typeof f.mangue!=='object')f.mangue={actif:false,categories:[],data:{}};
+  f.mangue.actif=!!f.mangue.actif;
+  if(!f.mangue.data||typeof f.mangue.data!=='object')f.mangue.data={};
+  f.mangue.categories=(Array.isArray(f.mangue.categories)?f.mangue.categories:[])
+    .filter(function(c2,i,t){return CATEGORIES.indexOf(c2)>=0&&t.indexOf(c2)===i;});
+  filtrerCles(f.mangue.data,function(c2){return f.mangue.categories.indexOf(c2)>=0;});
+  f.mangue.categories.forEach(function(cat){
+    let cd=f.mangue.data[cat];
+    if(!cd||typeof cd!=='object')cd=f.mangue.data[cat]={varietes:[],vdata:{}};
+    if(!cd.vdata||typeof cd.vdata!=='object')cd.vdata={};
+    cd.varietes=(Array.isArray(cd.varietes)?cd.varietes:[])
+      .filter(function(v,i,t){return VAR_MANGUE.indexOf(v)>=0&&t.indexOf(v)===i;});
+    filtrerCles(cd.vdata,function(v){return cd.varietes.indexOf(v)>=0;});
+    cd.varietes.forEach(function(v){cd.vdata[v]=nettoyerVariete(cd.vdata[v],null,true);});
+  });
+  return f;
+}
+/* Une liste de fiches reçue : seules les fiches d'une chambre existante
+   passent, une seule par chambre. */
+function nettoyerListe(liste){
+  if(!Array.isArray(liste))return null;
+  const vues={};
+  return liste.filter(function(f){return f&&typeof f==='object'&&!Array.isArray(f);})
+    .map(normaliser)
+    .filter(function(f){
+      if(CHAMBRES.indexOf(f.chambre)<0||vues[f.chambre])return false;
+      vues[f.chambre]=true;return true;
+    });
+}
+/* Un ensemble de journées reçu : { "2026-09-28": [fiches…], … } */
+function nettoyerJournees(o){
+  const propre={};
+  if(!o||typeof o!=='object'||Array.isArray(o))return propre;
+  Object.keys(o).forEach(function(iso){
+    if(!jourValide(iso))return;
+    const l=nettoyerListe(o[iso]);
+    if(l)propre[iso]=l;
+  });
+  return propre;
+}
+function nettoyerChomes(o){
+  const propre={};
+  if(!o||typeof o!=='object'||Array.isArray(o))return propre;
+  Object.keys(o).forEach(function(iso){
+    if(jourValide(iso)&&typeof o[iso]==='boolean')propre[iso]=o[iso];
+  });
+  return propre;
+}
+function nettoyerReconduits(l){
+  return Array.isArray(l)?l.filter(function(iso,i,t){return jourValide(iso)&&t.indexOf(iso)===i;}):[];
+}
+
 /* complète les fiches anciennes avec les nouveaux champs */
 function normaliser(f){
   if(!f.etat)f.etat='active';
@@ -1197,7 +1701,7 @@ function normaliser(f){
   if(!f.buts)f.buts=[];
   if(!f.projection)f.projection=[];
   if(f.debut==null)f.debut='';
-  if(!f.conservation)f.conservation={type:'',temperature:'',gazage:''};
+  if(!f.conservation||typeof f.conservation!=='object')f.conservation={type:'',temperature:'',gazage:''};
   if(f.conservation.depuis==null)f.conservation.depuis='';
   if(f.auto==null)f.auto=false;
   if(f.autoDepuis==null)f.autoDepuis='';
@@ -1209,7 +1713,7 @@ function normaliser(f){
      calibres passent sous une origine « non précisée » plutôt que d'être
      perdus. */
   const migre=function(d){
-    if(!d)return;
+    if(!d||typeof d!=='object')return;
     if(!d.parOrigine){
       d.parOrigine={};d.origines=[];
       if(d.calibres&&Object.keys(d.calibres).length){
@@ -1217,7 +1721,8 @@ function normaliser(f){
         d.parOrigine[ORIGINE_DEFAUT]={calibres:d.calibres};
       }
     }
-    if(!d.origines)d.origines=[];
+    if(!Array.isArray(d.origines))d.origines=[];
+    if(!d.parOrigine||typeof d.parOrigine!=='object')d.parOrigine={};
     /* Les marques dépendent de l'origine : une palette du Pérou et une
        d'Israël ne portent pas la même. Celles saisies au niveau de la variété
        sont recopiées sur chacune de ses origines. */
@@ -1234,15 +1739,14 @@ function normaliser(f){
     const cd=f.mangue.data[c];
     if(cd&&cd.vdata)Object.keys(cd.vdata).forEach(function(v){migre(cd.vdata[v]);});
   });
-  return f;
+  return assainirFiche(f);
 }
 function charger(){
   let brut=null;
   try{brut=JSON.parse(localStorage.getItem(CLE));}catch(e){}
   if(!brut){try{brut=JSON.parse(localStorage.getItem(CLE_V4));}catch(e){}}
   if(!brut)return{};
-  Object.keys(brut).forEach(function(j){brut[j]=(brut[j]||[]).map(normaliser);});
-  return brut;
+  return nettoyerJournees(brut);
 }
 var META_KEY='murisserie.meta.v1';
 var syncMetaLocal=(function(){
@@ -1262,7 +1766,7 @@ function sauverLocal(){
    reconduirait indéfiniment. */
 var CLE_RECONDUITS='murisserie.reconduits.v1';
 var reconduits=(function(){
-  try{return JSON.parse(localStorage.getItem(CLE_RECONDUITS))||[];}catch(e){return[];}
+  try{return nettoyerReconduits(JSON.parse(localStorage.getItem(CLE_RECONDUITS)));}catch(e){return[];}
 })();
 function sauverReconduits(){
   try{localStorage.setItem(CLE_RECONDUITS,JSON.stringify(reconduits));}catch(e){}
@@ -1270,7 +1774,7 @@ function sauverReconduits(){
 function fusionnerReconduits(liste){
   if(!Array.isArray(liste))return;
   let ajout=false;
-  liste.forEach(function(d){if(reconduits.indexOf(d)<0){reconduits.push(d);ajout=true;}});
+  nettoyerReconduits(liste).forEach(function(d){if(reconduits.indexOf(d)<0){reconduits.push(d);ajout=true;}});
   if(ajout)sauverReconduits();
 }
 var enRepercussion=false;
@@ -1369,7 +1873,10 @@ function toast(msg){
 
 /* ================= JOURNEES ================= */
 function renderJournees(){
-  document.getElementById('dateDuJour').textContent=jourLong(isoJour());
+  /* deux formes de la date : la longue, et une courte pour les petits écrans */
+  const court=dateDe(isoJour()).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+  document.getElementById('dateDuJour').innerHTML='<span class="d-long">'+esc(jourLong(isoJour()))+'</span>'
+    +'<span class="d-court">'+esc(court)+'</span>';
   document.getElementById('etatDuJour').textContent=phraseDuJour(isoJour());
   document.getElementById('sousTitrePlan').textContent=jourLong(jourActif);
   const na=document.getElementById('noteAuto');
@@ -1378,6 +1885,52 @@ function renderJournees(){
     na.hidden=!auto;
     if(auto)na.textContent=texteReconduction(jourActif);
   }
+  renderResume();
+}
+/* Les chiffres de la journée affichée, en tuiles : ce qui se lit en une
+   seconde avant de descendre dans le détail des chambres. Chaque chambre
+   compte dans une tuile et une seule, comme dans la phrase du jour. */
+function renderResume(){
+  const hote=document.getElementById('resumeJour');
+  if(!hote)return;
+  const b=bilanJournee(jourActif);
+  const tuiles=[];
+  const t=function(val,lib,cle){
+    tuiles.push('<div class="stat'+(cle?' st-'+cle:'')+'"><span class="stat-val num">'+val+'</span>'
+      +'<span class="stat-lib">'+(cle?'<span class="point '+cle+'" aria-hidden="true"></span>':'')+lib+'</span></div>');
+  };
+  t(b.utilisees+'<small>/'+CHAMBRES.length+'</small>','utilisée'+(b.utilisees>1?'s':''));
+  if(b.froid)t(b.froid,'froid','froid');
+  if(b.affinage)t(b.affinage,'affinage','affinage');
+  if(b.chauffe)t(b.chauffe,'chauffe','chauffe');
+  if(b.sansMode)t(b.sansMode,'à définir','adefinir');
+  if(b.requis)t(b.requis,'réquisitionnée'+(b.requis>1?'s':''),'requis');
+  if(b.horsService)t(b.horsService,'à l\'arrêt','hs');
+  if(b.vides)t(b.vides,'vide'+(b.vides>1?'s':''),'vide');
+  const pal=b.inc>0?'<span class="stat-val petit">à confirmer</span>':'<span class="stat-val num">'+b.total+'</span>';
+  tuiles.push('<div class="stat palettes">'+pal+'<span class="stat-lib">palette'+(b.total>1?'s':'')+'</span></div>');
+  hote.innerHTML='<div class="stats">'+tuiles.join('')+'</div>';
+}
+/* Pastille d'état de la synchronisation, en haut de l'écran : tant qu'elle ne
+   dit rien d'inquiétant, tout est envoyé. Un toucher mène aux réglages. */
+function majPuceSync(){
+  const p=document.getElementById('puceSync');
+  if(!p)return;
+  let ton='neutre',txt='Sur cet appareil',icone='telephone';
+  if(syncCode){
+    if(typeof navigator!=='undefined'&&navigator.onLine===false){ton='attente';txt='Hors ligne';icone='nuage';}
+    else if(authPrete&&!utilisateur){ton='attente';txt='Connexion requise';icone='utilisateur';}
+    else if(syncStatus==='error'){ton='erreur';txt='Erreur de synchro';icone='nuage';}
+    else if(syncStatus==='connecting'||(syncStatus==='on'&&!receptionFaite)){ton='attente';txt='Connexion…';icone='nuage';}
+    else if(syncStatus==='on'){
+      if(lectureSeule===true){ton='lecture';txt='Lecture seule';icone='cadenas';}
+      else{ton='ok';txt='Synchronisé';icone='nuage';}
+    }
+  }
+  p.className='puce-sync '+ton;
+  p.innerHTML=ico(icone)+'<span>'+txt+'</span>';
+  p.title=txt+' — ouvrir les réglages de synchronisation';
+  p.hidden=false;
 }
 /* Le lecteur doit savoir que cette feuille n'a pas été saisie par quelqu'un :
    elle décrit ce que les chambres font toutes seules. */
@@ -1435,36 +1988,77 @@ function renderBandeaux(){
   }
   document.getElementById('bandeaux').innerHTML=h;
   document.getElementById('btnEnregistrer').textContent=
-    modifEnCours!==null?'Mettre à jour la mûrisserie '+modifEnCours:'Enregistrer la chambre';
+    modifEnCours!==null?'Mettre à jour la chambre '+modifEnCours
+      :(etat.chambre!==null?'Enregistrer la chambre '+etat.chambre:'Enregistrer la chambre');
 
 }
 
 /* ================= ETAPE 1 : CHAMBRE ET ETAT ================= */
+/* Chaque case dit, sous son numéro, l'essentiel de la chambre : sa
+   température, son arrêt, ou qu'elle est libre. On voit ainsi la rangée de
+   portes d'un coup d'œil, sans descendre jusqu'au plan. */
+function sousTitreTuile(f){
+  if(!f)return 'libre';
+  const fam=ETATS[f.etat].famille;
+  if(fam==='hs')return 'arrêt';
+  if(fam==='requis')return 'réquis.';
+  const c=f.conservation;
+  if(!c.type)return 'à définir';
+  return c.temperature!==''?String(c.temperature).replace('.',',')+' °C':CONSERVATION[c.type].label.toLowerCase();
+}
 function renderRail(){
   document.getElementById('rail').innerHTML=CHAMBRES.map(function(n){
     const f=ficheDe(n);
     let cl='tuile';
+    let quoi='libre';
     if(f){
       const fam=ETATS[f.etat].famille;
-      if(fam==='hs')cl+=' hs';
-      else if(fam==='requis')cl+=' requis';
-      else cl+=(f.conservation.type?' mode-'+f.conservation.type:' mode-adefinir');
+      if(fam==='hs'){cl+=' hs';quoi=ETATS[f.etat].label;}
+      else if(fam==='requis'){cl+=' requis';quoi='réquisitionnée';}
+      else{
+        cl+=(f.conservation.type?' mode-'+f.conservation.type:' mode-adefinir');
+        quoi=f.conservation.type?CONSERVATION[f.conservation.type].label:'conservation à définir';
+      }
     }
-    return '<button type="button" class="'+cl+'" aria-pressed="'+(etat.chambre===n)+'" onclick="choisirChambre('+n+')">'+n+'</button>';
+    return '<button type="button" class="'+cl+'" aria-pressed="'+(etat.chambre===n)+'"'
+      +' aria-label="Mûrisserie '+n+' — '+esc(quoi)+'" onclick="choisirChambre('+n+')">'
+      +'<span class="t-num">'+n+'</span><span class="t-sous">'+esc(sousTitreTuile(f))+'</span></button>';
   }).join('');
 }
+/* Toucher une chambre déjà renseignée l'ouvre directement : la fiche n'est
+   modifiée qu'à l'enregistrement, et « Annuler » la laisse intacte. La
+   question « voulez-vous l'ouvrir ? » n'apportait qu'un geste de plus. */
+/* Vrai quand quitter le formulaire perdrait quelque chose : une nouvelle fiche
+   déjà commencée, ou une fiche existante qu'on a retouchée. */
+function saisieEntamee(){
+  if(etat.chambre===null)return false;
+  if(modifEnCours!==null){
+    const f=ficheDe(modifEnCours);
+    return !f||JSON.stringify(etat)!==JSON.stringify(normaliser(JSON.parse(JSON.stringify(f))));
+  }
+  return etat.etat!=='active'||etat.avocat.actif||etat.mangue.actif
+    ||etat.identification.avocat||etat.identification.mangue
+    ||!!etat.noteLibre||!!etat.conservation.type;
+}
 function choisirChambre(n){
-  if(etat.chambre===n){etat.chambre=null;renderRail();majEtapes();return;}
+  if(etat.chambre===n&&modifEnCours===null){etat.chambre=null;renderRail();majEtapes();return;}
   const existante=ficheDe(n);
   if(existante&&modifEnCours!==n){
+    if(!saisieEntamee()){modifier(n);return;}
     demanderConfirmation({
-      titre:'Mûrisserie '+n+' déjà renseignée',
-      corps:'<p>Une fiche existe déjà pour cette chambre aujourd\'hui. Voulez-vous l\'ouvrir pour la modifier ?</p>',
-      okLabel:'Ouvrir la fiche'
+      titre:'Ouvrir la mûrisserie '+n+' ?',
+      corps:'<p>La saisie en cours sur la <strong>mûrisserie '+etat.chambre+'</strong> n\'est pas enregistrée : '
+        +'elle sera abandonnée.</p>',
+      okLabel:'Ouvrir la mûrisserie '+n
     }).then(function(ok){if(ok)modifier(n);});
     return;
   }
   etat.chambre=n;renderRail();majEtapes();
+  const s=document.querySelector('.colonne-saisie');
+  if(s&&window.matchMedia&&window.matchMedia('(max-width:1079px)').matches){
+    const e=document.getElementById('champEtatChambre');
+    if(e)e.scrollIntoView({behavior:'smooth',block:'center'});
+  }
 }
 function changerEtatChambre(v){
   etat.etat=v;
@@ -2523,12 +3117,13 @@ function chambreHTML(n){
       case 'entete':
         h+='<div class="chambre-tete"><span class="titre">Mûrisserie</span><span class="chambre-num num">'+b.num+'</span>'
           +'<span class="droite">'+(b.total?'<span class="num tot-ch">'+esc(b.total)+'</span>':'')
-          +'<span class="noprint">'
+          +'<span class="noprint actions-carte">'
           +(estModifiable()
-            ?(f?'<button type="button" class="lien" onclick="modifier('+n+')">Modifier</button> '
-                +'<button type="button" class="lien" onclick="ouvrirTransfert('+n+')">Échanger</button> '
-                +'<button type="button" class="lien danger" onclick="supprimerFiche('+n+')">Supprimer</button>'
-              :'<button type="button" class="lien" onclick="choisirChambre('+n+')">Renseigner</button>')
+            ?(f?boutonIcone('modifier','Modifier la mûrisserie '+n,'modifier('+n+')')
+                +boutonIcone('echanger','Échanger ou copier la mûrisserie '+n,'ouvrirTransfert('+n+')')
+                +boutonIcone('supprimer','Supprimer la fiche de la mûrisserie '+n,'supprimerFiche('+n+')','danger')
+              :'<button type="button" class="lien accent" onclick="choisirChambre('+n+')">'
+                +ico('plus')+'Renseigner</button>')
             :'')
           +'</span></span></div>';
         break;
@@ -3232,6 +3827,15 @@ function construireDocumentWord(){
 
 /* ================= OUTILS D'INTERFACE ================= */
 function $(id){return document.getElementById(id);}
+/* Icône du jeu dessiné en tête de page. Le nom vient toujours du code, jamais
+   d'une donnée saisie. */
+function ico(nom){return '<svg class="ico" aria-hidden="true"><use href="#i-'+nom+'"/></svg>';}
+/* Bouton réduit à son icône : le libellé reste lu par les lecteurs d'écran et
+   apparaît au survol. */
+function boutonIcone(nom,libelle,action,ton){
+  return '<button type="button" class="ico-btn'+(ton?' '+ton:'')+'" title="'+esc(libelle)+'"'
+    +' aria-label="'+esc(libelle)+'" onclick="'+action+'">'+ico(nom)+'</button>';
+}
 function nouvelId(prefixe){return prefixe+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
 
 /* ---- modale de confirmation, avec case à cocher facultative ---- */
@@ -3278,7 +3882,8 @@ function majOngletJour(){
   const b=document.querySelector('.onglet[data-onglet="jour"]');
   if(!b)return;
   const archive=(jourActif!==isoJour());
-  b.textContent=archive?jourAbrege(jourActif):"Aujourd'hui";
+  const lib=b.querySelector('.lib')||b;
+  lib.textContent=archive?jourAbrege(jourActif):"Aujourd'hui";
   b.classList.toggle('archive',archive);
 }
 var vueHisto='jours';
@@ -3456,6 +4061,10 @@ function renderHistorique(){
     if(b.ident)details.push('dont '+b.ident+' en identification');
     if(!details.length)details.push('aucune chambre renseignée');
     const chiffre=(b.total===0&&b.inc===0)?'—':(b.inc>0?'quantités à confirmer':b.total+' palette'+(b.total>1?'s':''));
+    /* k ne sert d'argument que s'il a bien la forme d'une date : une clé
+       reçue d'ailleurs ne doit jamais pouvoir s'écrire dans un onclick */
+    if(!jourValide(k))return '';
+    const lecture=(lectureSeule===true);
     return '<div class="jour-ligne'+(cejour?' aujourdhui':'')+'">'
       +'<div class="jour-tete"><span class="jour-nom">'+esc(jourCourt(k))+'</span>'
       +(cejour?'<span class="jour-marque">aujourd\'hui</span>':'')
@@ -3463,11 +4072,11 @@ function renderHistorique(){
       +'<span class="jour-chiffres num">'+esc(chiffre)+'</span></div>'
       +'<div class="jour-detail">'+esc(details.join(' · '))+'</div>'
       +'<div class="jour-actions">'
-      +'<button type="button" class="bouton secondaire petit" onclick="ouvrirJournee(\''+k+'\')">Ouvrir</button>'
-      +'<button type="button" class="bouton secondaire petit" onclick="exporterJournee(\''+k+'\',\'pdf\')">PDF</button>'
-      +'<button type="button" class="bouton secondaire petit" onclick="exporterJournee(\''+k+'\',\'excel\')">Excel</button>'
-      +'<button type="button" class="bouton secondaire petit" onclick="exporterJournee(\''+k+'\',\'word\')">Word</button>'
-      +'<button type="button" class="lien danger" onclick="supprimerJournee(\''+k+'\')">Supprimer</button>'
+      +'<button type="button" class="bouton petit" onclick="ouvrirJournee(\''+k+'\')">Ouvrir'+ico('ouvrir')+'</button>'
+      +'<button type="button" class="bouton secondaire petit" onclick="exporterJournee(\''+k+'\',\'pdf\')">'+ico('imprimer')+'PDF</button>'
+      +'<button type="button" class="bouton secondaire petit" onclick="exporterJournee(\''+k+'\',\'excel\')">'+ico('excel')+'Excel</button>'
+      +'<button type="button" class="bouton secondaire petit" onclick="exporterJournee(\''+k+'\',\'word\')">'+ico('word')+'Word</button>'
+      +(lecture?'':boutonIcone('supprimer','Supprimer la journée du '+jourCourt(k),'supprimerJournee(\''+k+'\')','danger pousse'))
       +'</div></div>';
   }).join('');
 }
@@ -4017,9 +4626,19 @@ function parseFirebaseConfig(texte){
   });
   return (cfg.apiKey&&cfg.projectId)?cfg:null;
 }
-function loadScript(src){
+/* Empreintes des fichiers du SDK, pour cette version précise : si le fichier
+   servi par le réseau n'est pas exactement celui-ci (serveur compromis,
+   intermédiaire malveillant), le navigateur refuse de l'exécuter. À recalculer
+   si FIREBASE_SDK_VERSION change. */
+var FIREBASE_SDK_SRI={
+  'firebase-app-compat.js':'sha384-+65NgAKqXr1Nb7sBmV6O09pL8ASqZsi29OE718meKinGAWaa70VE5V6LNjXVBjIA',
+  'firebase-auth-compat.js':'sha384-I1LYojsZ5RM1cOda44Z2h42Qa6YfsQ1XkXxREnhp4ueYBR/4d1pG1K+NZM537Vsj',
+  'firebase-firestore-compat.js':'sha384-YHSscHG455M7b+d6r5ibTMznxrZxV272bMjXT9ndTgmx05fLR7HsdmcVklhpBSyt'
+};
+function loadScript(src,integrite){
   return new Promise(function(resolve,reject){
     var s=document.createElement('script');
+    if(integrite){s.integrity=integrite;s.crossOrigin='anonymous';}
     s.src=src;s.onload=function(){resolve();};
     s.onerror=function(){reject(new Error('Échec de chargement : '+src));};
     document.head.appendChild(s);
@@ -4028,9 +4647,10 @@ function loadScript(src){
 function ensureFirebaseLoaded(){
   if(window.firebase)return Promise.resolve();
   var base='https://www.gstatic.com/firebasejs/'+FIREBASE_SDK_VERSION+'/';
-  return loadScript(base+'firebase-app-compat.js')
-    .then(function(){return loadScript(base+'firebase-auth-compat.js');})
-    .then(function(){return loadScript(base+'firebase-firestore-compat.js');});
+  var charge=function(nom){return loadScript(base+nom,FIREBASE_SDK_SRI[nom]);};
+  return charge('firebase-app-compat.js')
+    .then(function(){return charge('firebase-auth-compat.js');})
+    .then(function(){return charge('firebase-firestore-compat.js');});
 }
 /* Idempotent, et se réinitialise si le projet actif change — ce que
    initializeApp() refuse sinon silencieusement. */
@@ -4273,9 +4893,19 @@ function brancherConnexion(){
   });
 }
 function generateSyncCode(){
+  /* Tirage cryptographique : Math.random n'est pas fait pour produire des
+     identifiants difficiles à deviner. 31 × 8 = 248 : le modulo reste
+     sans biais. */
   var alphabet='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   var code='';
-  for(var i=0;i<8;i++)code+=alphabet[Math.floor(Math.random()*alphabet.length)];
+  var octets=new Uint8Array(8);
+  if(window.crypto&&window.crypto.getRandomValues)window.crypto.getRandomValues(octets);
+  else for(var j=0;j<8;j++)octets[j]=Math.floor(Math.random()*248);
+  for(var i=0;i<8;i++){
+    var o=octets[i];
+    while(o>=248){var t=new Uint8Array(1);window.crypto.getRandomValues(t);o=t[0];}
+    code+=alphabet[o%alphabet.length];
+  }
   return code;
 }
 /* Vérifie que le code tiré n'est pas déjà pris : deux équipes ne doivent
@@ -4356,10 +4986,12 @@ function majSuiviMois(){
   });
   sauverSuiviMois();
 }
+/* Le contenu reçu passe par le même contrôle qu'une sauvegarde restaurée :
+   une journée d'un autre appareil n'est pas plus sûre qu'un fichier. */
 function lireMoisDistant(d){
   if(d.joursZ)return ungzipFromBase64(d.joursZ).then(function(j){
-    if(!j)return null;try{return JSON.parse(j);}catch(e){return null;}});
-  if(d.jours)return Promise.resolve(d.jours);
+    if(!j)return null;try{return nettoyerJournees(JSON.parse(j));}catch(e){return null;}});
+  if(d.jours)return Promise.resolve(nettoyerJournees(d.jours));
   return Promise.resolve({});
 }
 function syncUsageRatio(){
@@ -4399,7 +5031,7 @@ function attachSyncListener(){
     if(data.updatedBy!==getDeviceId()){
       fusionnerReconduits(data.reconduits);
       if(data.joursChomes&&typeof data.joursChomes==='object'){
-        joursChomes=data.joursChomes;sauverChomes();
+        joursChomes=nettoyerChomes(data.joursChomes);sauverChomes();
         if(ongletActif==='reglages')renderCarteChomes();
       }
     }
@@ -4452,6 +5084,7 @@ function attachSyncListener(){
       if(receptionFaite)return;
       receptionFaite=true;
       envoiEnAttente=false;
+      majPuceSync();
       /* La sonde enchaîne elle-même la première publication si l'écriture est
          permise : lancer les deux de front ferait essuyer plusieurs refus à un
          compte en lecture seule. */
@@ -4520,6 +5153,7 @@ function reprendreAncienFormat(data){
   ancienFormatRepris=true;
   readCloudState(data).then(function(entrant){
     if(!entrant||typeof entrant!=='object')return;
+    entrant=nettoyerJournees(entrant);
     applyingRemote=true;
     let ajout=0;
     Object.keys(entrant).forEach(function(j){
@@ -4585,7 +5219,7 @@ function majActionsJournee(){
   });
 }
 function appliquerDroits(){
-  renderVerrou();renderPlan();renderJournees();
+  renderVerrou();renderPlan();renderJournees();majPuceSync();
   if(ongletActif==='reglages'){renderCarteSync();renderCarteChomes();}
   majActionsSauvegarde();majActionsJournee();
 }
@@ -4729,8 +5363,9 @@ function restaurerSauvegarde(fichier){
   lecteur.onload=function(){
     let paquet;
     try{paquet=JSON.parse(lecteur.result);}catch(e){toast('Fichier illisible.');return;}
-    const entrant=(paquet&&paquet.journees)?paquet.journees:paquet;
-    if(!entrant||typeof entrant!=='object'||Array.isArray(entrant)){toast('Ce fichier n\'est pas une sauvegarde.');return;}
+    const brut=(paquet&&paquet.journees)?paquet.journees:paquet;
+    if(!brut||typeof brut!=='object'||Array.isArray(brut)){toast('Ce fichier n\'est pas une sauvegarde.');return;}
+    const entrant=nettoyerJournees(brut);
     const nb=Object.keys(entrant).length;
     demanderConfirmation({
       titre:'Restaurer une sauvegarde',
@@ -4742,13 +5377,9 @@ function restaurerSauvegarde(fichier){
       okLabel:'Restaurer'
     }).then(function(ok){
       if(!ok)return;
-      const propre={};
-      Object.keys(entrant).forEach(function(j){
-        if(Array.isArray(entrant[j]))propre[j]=entrant[j].map(normaliser);
-      });
-      journees=propre;
-      if(paquet&&Array.isArray(paquet.reconduits)){reconduits=paquet.reconduits.slice();sauverReconduits();}
-      if(paquet&&paquet.joursChomes&&typeof paquet.joursChomes==='object'){joursChomes=paquet.joursChomes;sauverChomes();}
+      journees=entrant;
+      if(paquet&&Array.isArray(paquet.reconduits)){reconduits=nettoyerReconduits(paquet.reconduits);sauverReconduits();}
+      if(paquet&&paquet.joursChomes&&typeof paquet.joursChomes==='object'){joursChomes=nettoyerChomes(paquet.joursChomes);sauverChomes();}
       if(!journees[jourActif])journees[jourActif]=[];
       joursDeverrouilles={};
       modifEnCours=null;
@@ -4759,8 +5390,54 @@ function restaurerSauvegarde(fichier){
   lecteur.readAsText(fichier);
 }
 /* Code exigé pour les deux gestes qui détruisent l'historique entier :
-   l'effacement et la restauration, qui remplace tout par un autre fichier. */
-var CODE_SECURITE='Avoteam@';
+   l'effacement et la restauration, qui remplace tout par un autre fichier.
+   Le fichier est public : le code n'y figure donc plus en clair, seulement son
+   empreinte SHA-256 (précédée d'un sel propre à l'application). Pour changer
+   de code, remplacer cette empreinte par celle de « murisserie|nouveau code ». */
+var CODE_SECURITE={empreinte:'a5ecb6dceb56c715306e79888c91c416a4b0c3694bcafebfdd29d9ce5d0c49a4'};
+/* SHA-256 écrit ici plutôt que confié à crypto.subtle : celui-ci n'existe pas
+   quand le fichier est ouvert directement depuis le disque, et la vérification
+   doit rester synchrone. */
+function sha256Hex(texte){
+  const K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  const H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  const oct=Array.from(new TextEncoder().encode(texte));
+  const bits=oct.length*8;
+  oct.push(0x80);
+  while(oct.length%64!==56)oct.push(0);
+  for(let i=7;i>=0;i--)oct.push(i>=4?0:(bits>>>(i*8))&0xff);
+  const r=function(x,n){return (x>>>n)|(x<<(32-n));};
+  const W=new Array(64);
+  for(let j=0;j<oct.length;j+=64){
+    for(let t=0;t<16;t++)W[t]=(oct[j+4*t]<<24)|(oct[j+4*t+1]<<16)|(oct[j+4*t+2]<<8)|oct[j+4*t+3];
+    for(let t=16;t<64;t++){
+      const s0=r(W[t-15],7)^r(W[t-15],18)^(W[t-15]>>>3);
+      const s1=r(W[t-2],17)^r(W[t-2],19)^(W[t-2]>>>10);
+      W[t]=(W[t-16]+s0+W[t-7]+s1)|0;
+    }
+    let a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+    for(let t=0;t<64;t++){
+      const t1=(h+(r(e,6)^r(e,11)^r(e,25))+((e&f)^(~e&g))+K[t]+W[t])|0;
+      const t2=((r(a,2)^r(a,13)^r(a,22))+((a&b)^(a&c)^(b&c)))|0;
+      h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;
+    }
+    H[0]=(H[0]+a)|0;H[1]=(H[1]+b)|0;H[2]=(H[2]+c)|0;H[3]=(H[3]+d)|0;
+    H[4]=(H[4]+e)|0;H[5]=(H[5]+f)|0;H[6]=(H[6]+g)|0;H[7]=(H[7]+h)|0;
+  }
+  return H.map(function(x){return ('00000000'+(x>>>0).toString(16)).slice(-8);}).join('');
+}
+function codeCorrect(saisi,attendu){
+  if(!attendu)return true;
+  if(typeof attendu==='string')return saisi===attendu;
+  return sha256Hex('murisserie|'+String(saisi))===attendu.empreinte;
+}
 function effacerTout(){
   demanderConfirmation({
     titre:'Effacer toutes les données',
@@ -4783,6 +5460,7 @@ function effacerTout(){
 var etapeSync='repos';   /* repos | choix | saisie | avance */
 var brouillonCode='';
 function renderCarteSync(){
+  majPuceSync();
   const hote=$('carteSync');
   if(!hote)return;
   /* la session est peut-être déjà ouverte : on la retrouve dès l'affichage
@@ -4791,38 +5469,60 @@ function renderCarteSync(){
   /* la sous-collection mensuelle doit être autorisée explicitement */
   /* La liste des adresses est la seule barrière qui compte : le fichier et le
      code de salle circulent, pas les comptes. */
-  const regles='rules_version = \'2\';\n'
-    +'service cloud.firestore {\n'
-    +'  match /databases/{db}/documents {\n\n'
-    +'    // qui peut saisir et corriger\n'
-    +'    function redacteur() {\n'
-    +'      return request.auth != null && request.auth.token.email in [\n'
-    +'        \'florian@'+DOMAINE_COMPTES+'\',\n'
-    +'        \'marc@'+DOMAINE_COMPTES+'\'\n'
-    +'      ];\n'
-    +'    }\n\n'
-    +'    // qui peut seulement consulter, imprimer et exporter\n'
-    +'    function lecteur() {\n'
-    +'      return request.auth != null && request.auth.token.email in [\n'
-    +'        \'direction@'+DOMAINE_COMPTES+'\'\n'
-    +'      ];\n'
-    +'    }\n\n'
-    +'    // un mois ne peut être remplacé que par une révision strictement plus\n'
-    +'    // récente : aucun appareil ne peut donc écraser une saisie qu\'il n\'a\n'
-    +'    // pas encore vue, même après une longue coupure réseau\n'
-    +'    function revisionEnAvance() {\n'
-    +'      return !(\'rev\' in resource.data) || request.resource.data.rev > resource.data.rev;\n'
-    +'    }\n\n'
-    +'    match /'+COLLECTION_SYNC+'/{salle} {\n'
-    +'      allow read:  if (redacteur() || lecteur()) && salle.matches(\'^[A-Z2-9]{8}$\');\n'
-    +'      allow write: if redacteur() && salle.matches(\'^[A-Z2-9]{8}$\');\n'
-    +'      match /'+SOUS_MOIS+'/{mois} {\n'
-    +'        allow read:   if redacteur() || lecteur();\n'
-    +'        allow create: if redacteur();\n'
-    +'        allow update: if redacteur() && revisionEnAvance();\n'
-    +'      }\n'
-    +'    }\n'
-    +'  }\n}';
+  /* Modèle identique à firestore.rules dans le dépôt, noms d'exemple en plus. */
+  const regles=[
+    "rules_version = '2';",
+    "service cloud.firestore {",
+    "  match /databases/{db}/documents {",
+    "",
+    "    // qui peut saisir et corriger",
+    "    function redacteur() {",
+    "      return request.auth != null && request.auth.token.email in [",
+    "        'florian@"+DOMAINE_COMPTES+"',",
+    "        'marc@"+DOMAINE_COMPTES+"'",
+    "      ];",
+    "    }",
+    "",
+    "    // qui peut seulement consulter, imprimer et exporter",
+    "    function lecteur() {",
+    "      return request.auth != null && request.auth.token.email in [",
+    "        'direction@"+DOMAINE_COMPTES+"'",
+    "      ];",
+    "    }",
+    "",
+    "    function salleValide(salle) { return salle.matches('^[A-Z2-9]{8}$'); }",
+    "    function moisValide(mois) { return mois.matches('^[0-9]{4}-[0-9]{2}$'); }",
+    "",
+    "    // un mois ne peut être remplacé que par une révision strictement plus",
+    "    // récente : aucun appareil ne peut donc écraser une saisie qu'il n'a",
+    "    // pas encore vue, même après une longue coupure réseau",
+    "    function revisionEnAvance() {",
+    "      return !('rev' in resource.data) || request.resource.data.rev > resource.data.rev;",
+    "    }",
+    "",
+    "    // seuls les champs écrits par l'application sont acceptés",
+    "    function contenuMoisValide() {",
+    "      let d = request.resource.data;",
+    "      return d.keys().hasOnly(['jours', 'joursZ', 'v', 'rev', 'updatedAt', 'updatedBy'])",
+    "        && d.rev is int && d.rev >= 1;",
+    "    }",
+    "    function contenuSalleValide() {",
+    "      return request.resource.data.keys().hasOnly(",
+    "        ['reconduits', 'joursChomes', 'v', 'updatedAt', 'updatedBy', 'journees', 'journeesZ']);",
+    "    }",
+    "",
+    "    match /"+COLLECTION_SYNC+"/{salle} {",
+    "      allow read:           if (redacteur() || lecteur()) && salleValide(salle);",
+    "      allow create, update: if redacteur() && salleValide(salle) && contenuSalleValide();",
+    "      match /"+SOUS_MOIS+"/{mois} {",
+    "        allow read:   if (redacteur() || lecteur()) && salleValide(salle);",
+    "        allow create: if redacteur() && salleValide(salle) && moisValide(mois) && contenuMoisValide();",
+    "        allow update: if redacteur() && salleValide(salle) && moisValide(mois) && contenuMoisValide()",
+    "                      && revisionEnAvance();",
+    "      }",
+    "    }",
+    "  }",
+    "}"].join('\n');
   const aideProjet='<details class="aide-pliante"><summary>Options développeur</summary>'
     +'<div class="contenu">Dans la console Firebase du projet <strong>'+esc(activeFirebaseConfig().projectId)+'</strong> :'
     +'<br>1. <strong>Authentication → Sign-in method</strong> → activer <strong>Adresse e-mail/Mot de passe</strong>, '
@@ -5190,7 +5890,7 @@ document.getElementById('modaleOk').addEventListener('click',function(){
   /* Un code exigé se vérifie ici : tant qu'il est faux, la fenêtre reste
      ouverte et l'action ne part pas. */
   if(modaleCode){
-    if(document.getElementById('modaleCode').value!==modaleCode){
+    if(!codeCorrect(document.getElementById('modaleCode').value,modaleCode)){
       document.getElementById('modaleCodeErreur').textContent='Code incorrect. La suppression n\'a pas été effectuée.';
       document.getElementById('modaleCode').value='';
       document.getElementById('modaleCode').focus();
@@ -5283,7 +5983,10 @@ document.getElementById('btnInstaller').addEventListener('click',function(){
 loadSyncSettings();
 document.getElementById('liste-origines').innerHTML=
   ORIGINES.map(function(o){return '<option value="'+esc(o)+'">';}).join('');
-renderJournees();renderPlan();majEtapes();renderVerrou();majOngletJour();
+renderJournees();renderPlan();majEtapes();renderVerrou();majOngletJour();majPuceSync();
+document.getElementById('puceSync').addEventListener('click',function(){ouvrirOnglet('reglages');});
+window.addEventListener('online',majPuceSync);
+window.addEventListener('offline',majPuceSync);
 if(syncCode){
   /* la session persiste : surveillerAuth rebranche la synchronisation dès que
      le compte est retrouvé, ou affiche la demande de connexion sinon */
