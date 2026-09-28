@@ -1048,9 +1048,11 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
   @media(min-width:1180px){
     #pane-jour .colonnes{grid-template-columns:minmax(360px,420px) minmax(0,1fr);gap:20px}
     /* la saisie reste en vue pendant qu'on parcourt le plan */
+    /* hauteur ajustée par ajusterHauteurSaisie() à la place réellement
+       visible, pour que Enregistrer et Annuler restent toujours à l'écran */
     #pane-jour .colonne-saisie{
       position:sticky;top:98px;
-      max-height:calc(100vh - 112px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;
+      max-height:var(--haut-saisie,calc(100vh - 112px));overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;
     }
     #pane-jour .colonne-saisie .barre-enregistrer{bottom:0}
   }
@@ -4609,6 +4611,7 @@ function ouvrirVueHisto(nom){
   if(nom==='jours')renderHistorique();else renderAnalyses();
 }
 function ouvrirOnglet(nom,vue){
+  setTimeout(demanderHauteurSaisie,0);
   if(nom==='analyses'){nom='histo';vue='analyses';}
   if(vue)vueHisto=vue;
   ongletActif=nom;
@@ -7368,6 +7371,35 @@ window.addEventListener('afterprint',function(){
 });
 document.getElementById('btnExcel').addEventListener('click',exportExcel);
 document.getElementById('btnWord').addEventListener('click',exportWord);
+/* Sur ordinateur, la colonne de saisie défile toute seule et garde en bas la
+   barre Enregistrer / Annuler. Tant que la page n'est pas descendue, la
+   colonne commence plus bas que sa position « collée » : sa hauteur doit donc
+   suivre la place qui reste réellement jusqu'au bas de la fenêtre, sinon la
+   barre passe sous le bord de l'écran. */
+var attenteHauteurSaisie=false;
+function ajusterHauteurSaisie(){
+  attenteHauteurSaisie=false;
+  const s=document.querySelector('#pane-jour .colonne-saisie');
+  if(!s)return;
+  if(!window.matchMedia('(min-width:1180px)').matches||!s.offsetParent){
+    document.documentElement.style.removeProperty('--haut-saisie');return;
+  }
+  const haut=Math.max(98,s.getBoundingClientRect().top);
+  document.documentElement.style.setProperty('--haut-saisie',Math.max(280,Math.floor(window.innerHeight-haut-14))+'px');
+}
+function demanderHauteurSaisie(){
+  if(attenteHauteurSaisie)return;
+  attenteHauteurSaisie=true;
+  requestAnimationFrame(ajusterHauteurSaisie);
+}
+window.addEventListener('scroll',demanderHauteurSaisie,{passive:true,capture:true});
+window.addEventListener('resize',demanderHauteurSaisie);
+if(window.ResizeObserver){
+  const oHaut=new ResizeObserver(demanderHauteurSaisie);
+  ['navJour','resumeJour','zoneVerrou'].forEach(function(id){const e=document.getElementById(id);if(e)oHaut.observe(e);});
+  const pj=document.getElementById('pane-jour');if(pj)oHaut.observe(pj);
+}
+demanderHauteurSaisie();
 majActionsJournee();
 document.getElementById('btnRepriseJour').addEventListener('click',ouvrirRepriseJournee);
 document.getElementById('btnViderJour').addEventListener('click',function(){
