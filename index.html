@@ -5588,7 +5588,8 @@ function describeSyncError(err){
   var msg=String((err&&err.message)||err||'');
   if(code.indexOf('permission-denied')!==-1||/Missing or insufficient permissions/i.test(msg))
     return 'Accès refusé pour ce compte'+(utilisateur?' ('+utilisateur.nom+')':'')
-      +'. Soit son nom ne figure pas dans la liste des règles Firestore, soit les règles n\'ont pas encore été publiées.';
+      +'. Ce compte ne fait pas (ou plus) partie de l\'équipe : demandez à l\'administrateur ou à la responsable '
+      +'de l\'ajouter depuis l\'onglet Équipe.';
   if(code.indexOf('unauthenticated')!==-1)
     return 'Session expirée ou compte fermé. Reconnectez-vous avec votre nom d\'utilisateur et votre mot de passe.';
   if(code.indexOf('unavailable')!==-1||/offline|network/i.test(msg))
@@ -6047,11 +6048,11 @@ function renderConnexion(){
       +'<button type="button" class="cx-lien" id="cxAutre">Ce n\'est pas vous ? Changer de compte</button></div>';
   }else if(e.mode==='oubli'){
     h='<h2 id="cxTitre">Mot de passe oublié</h2>'
-      +'<p class="cx-intro">Les comptes sont gérés par l\'administrateur de l\'application : '
-      +'lui seul peut vous attribuer un nouveau mot de passe.</p>'
-      +'<ol class="cx-etapes"><li>Prévenez l\'administrateur, qui vous donne un <b>mot de passe provisoire</b> '
-      +'(console Firebase → Authentication).</li><li>Connectez-vous avec ce mot de passe provisoire.</li>'
-      +'<li>Remplacez-le aussitôt par le vôtre : <b>Réglages → Mon compte → Changer mon mot de passe</b>.</li></ol>'
+      +'<p class="cx-intro">Aucun mot de passe n\'est envoyé par e-mail : un nouveau vous est remis '
+      +'de vive voix par l\'administrateur ou la responsable mûrisserie.</p>'
+      +'<ol class="cx-etapes"><li>Prévenez-les : depuis l\'onglet <b>Équipe</b>, ils vous créent un '
+      +'<b>mot de passe provisoire</b>.</li><li>Connectez-vous avec ce mot de passe provisoire.</li>'
+      +'<li>L\'application vous demande aussitôt de choisir le vôtre : il remplace le provisoire.</li></ol>'
       +'<button type="button" class="bouton secondaire cx-principal" id="cxRetourOubli">'+ico('retour')+'Retour à la connexion</button>';
   }else if(e.mode==='salle'){
     h='<h2 id="cxTitre">Rejoindre votre équipe</h2>'
