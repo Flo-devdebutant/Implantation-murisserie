@@ -2,31 +2,79 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{db}/documents {
 
-    // qui peut saisir et corriger
-    function redacteur() {
-      return request.auth != null && request.auth.token.email in [
-        'florian@murisserie.invalid',
-        'seb@murisserie.invalid',
-        'sofia@murisserie.invalid'
-      ];
+    // ------------------------------------------------------------------
+    // Équipe : chaque personne a une fiche membres/{adresse du compte}
+    // qui porte son rôle. Plus de liste à modifier ici à la main : les
+    // rôles se gèrent depuis l'onglet Équipe de l'application.
+    //   admin        administrateur : tout, y compris les responsables
+    //   responsable  responsable mûrisserie : saisie, et gère les
+    //                mûrisseurs et les observateurs
+    //   murisseur    saisie et consultation
+    //   observateur  consultation, impression et exports seulement
+    // ------------------------------------------------------------------
+    function fiche() {
+      return /databases/$(db)/documents/membres/$(request.auth.token.email);
+    }
+    function membre() {
+      return request.auth != null && request.auth.token.email is string && exists(fiche());
+    }
+    function role() { return get(fiche()).data.role; }
+    function admin() { return membre() && role() == 'admin'; }
+    function responsable() { return membre() && role() == 'responsable'; }
+    function redacteur() { return membre() && role() in ['admin', 'responsable', 'murisseur']; }
+    function lecteur() { return membre() && role() == 'observateur'; }
+
+    // qui peut attribuer ou retirer un rôle donné
+    function gereRole(r) {
+      return admin() && r in ['admin', 'responsable', 'murisseur', 'observateur']
+          || responsable() && r in ['murisseur', 'observateur'];
+    }
+    function nomValide(nom) { return nom is string && nom.matches('^[a-z0-9._-]{2,30}$'); }
+    function contenuMembre(d) {
+      return d.keys().hasOnly(['nom', 'role', 'provisoire', 'majLe', 'majPar'])
+        && nomValide(d.nom) && d.provisoire is bool;
+    }
+    function roleDe(adresse) { return get(/databases/$(db)/documents/membres/$(adresse)).data.role; }
+    function roleApres(adresse) { return getAfter(/databases/$(db)/documents/membres/$(adresse)).data.role; }
+
+    match /membres/{adresse} {
+      allow read: if membre();
+      allow create: if contenuMembre(request.resource.data) && gereRole(request.resource.data.role);
+      allow update: if contenuMembre(request.resource.data) && (
+          // un gestionnaire change le rôle d'un autre (jamais le sien : on ne
+          // se retire pas ses propres droits par mégarde)
+          adresse != request.auth.token.email
+            && gereRole(resource.data.role) && gereRole(request.resource.data.role)
+          // chacun lève son propre « mot de passe provisoire »
+          || adresse == request.auth.token.email
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['provisoire', 'majLe'])
+            && request.resource.data.provisoire == false
+        );
+      allow delete: if adresse != request.auth.token.email && gereRole(resource.data.role);
     }
 
-    // qui peut seulement consulter, imprimer et exporter
-    function lecteur() {
-      return request.auth != null && request.auth.token.email in [
-        'laura@murisserie.invalid'
-      ];
+    // Annuaire : le nom d'utilisateur tapé à la connexion mène à l'adresse du
+    // compte. Lisible avant connexion, un nom à la fois (jamais la liste).
+    match /annuaire/{nom} {
+      allow get: if nomValide(nom);
+      allow list: if admin() || responsable();
+      allow create: if nomValide(nom) && request.resource.data.keys().hasOnly(['email'])
+        && gereRole(roleApres(request.resource.data.email));
+      allow update: if request.resource.data.keys().hasOnly(['email'])
+        && gereRole(roleApres(request.resource.data.email))
+        && (!exists(/databases/$(db)/documents/membres/$(resource.data.email))
+            || gereRole(roleDe(resource.data.email)));
+      allow delete: if !exists(/databases/$(db)/documents/membres/$(resource.data.email))
+        || gereRole(roleDe(resource.data.email));
     }
 
+    // ------------------------------------------------------------------
+    // Journées synchronisées
+    // ------------------------------------------------------------------
     // un code de salle : 8 caractères, sans les signes ambigus (0, O, 1, I, L)
-    function salleValide(salle) {
-      return salle.matches('^[A-Z2-9]{8}$');
-    }
-
+    function salleValide(salle) { return salle.matches('^[A-Z2-9]{8}$'); }
     // un mois : AAAA-MM
-    function moisValide(mois) {
-      return mois.matches('^[0-9]{4}-[0-9]{2}$');
-    }
+    function moisValide(mois) { return mois.matches('^[0-9]{4}-[0-9]{2}$'); }
 
     // un mois ne peut être remplacé que par une révision strictement plus
     // récente : aucun appareil ne peut donc écraser une saisie qu'il n'a
@@ -34,19 +82,11 @@ service cloud.firestore {
     function revisionEnAvance() {
       return !('rev' in resource.data) || request.resource.data.rev > resource.data.rev;
     }
-
-    // Le document d'un mois ne contient que ce que l'application y écrit :
-    // les journées (compressées ou non), un numéro de révision entier, et qui
-    // l'a écrit quand. Tout autre champ est refusé.
     function contenuMoisValide() {
       let d = request.resource.data;
       return d.keys().hasOnly(['jours', 'joursZ', 'v', 'rev', 'updatedAt', 'updatedBy'])
         && d.rev is int && d.rev >= 1;
     }
-
-    // Le document de la salle ne porte que ses réglages (jours chômés,
-    // dimanches reconduits), plus les deux champs de l'ancien format, que
-    // l'application efface après les avoir repris.
     function contenuSalleValide() {
       return request.resource.data.keys().hasOnly(
         ['reconduits', 'joursChomes', 'v', 'updatedAt', 'updatedBy', 'journees', 'journeesZ']);
