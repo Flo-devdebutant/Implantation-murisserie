@@ -644,7 +644,7 @@ details.aide-pliante .contenu{font-size:.85rem;color:var(--encre-doux);margin-to
 .m-hs{--m:#A8362A;--t:#F8E2DE;--b:#DCA29A;--mf:#6E1F16}
 .m-vide{--m:#AEB6AF;--t:#F6F7F6;--b:#C9D0CA;--mf:#6B756D;border-style:dashed}
 /* tête de carte : la couleur du mode, lisible de loin sur la porte */
-.f-ct{display:flex;flex-wrap:wrap;align-items:center;gap:.2em .45em;padding:.32em .55em;background:var(--m);color:#fff}
+.f-ct{display:flex;flex-wrap:wrap;align-items:center;gap:.2em .45em;padding:.32em .75em .32em .55em;background:var(--m);color:#fff}
 .m-adefinir .f-ct,.m-hs .f-ct{background:repeating-linear-gradient(135deg,var(--m),var(--m) 1.6mm,var(--mf) 1.6mm,var(--mf) 3.2mm)}
 .m-vide .f-ct{background:var(--t);color:var(--mf);border-bottom:.3mm dashed var(--b)}
 .f-no{font-size:1.9em;font-weight:850;line-height:1;min-width:1em;text-align:center;font-variant-numeric:tabular-nums}
@@ -676,9 +676,9 @@ details.aide-pliante .contenu{font-size:.85rem;color:var(--encre-doux);margin-to
 .f-prod.mangue{--c:#B05A0F}.f-prod.neutre{--c:#77837A}
 .f-prod>span:first-child{background:var(--c);color:#fff;font-weight:850;letter-spacing:.1em;font-size:.8em;
   padding:.14em .6em;border-radius:1em}
-.f-prod .q{font-weight:800;font-size:.92em;font-variant-numeric:tabular-nums}
+.f-prod .q{padding-right:.2em;font-weight:800;font-size:.92em;font-variant-numeric:tabular-nums}
 .f-var{display:flex;justify-content:space-between;align-items:baseline;gap:.4em;font-weight:800;margin-top:.12em}
-.f-var .q{font-weight:600;color:#4A564D;font-size:.9em;white-space:nowrap}
+.f-var .q{padding-right:.2em;font-weight:600;color:#4A564D;font-size:.9em;white-space:nowrap}
 .f-orig{--c:#2C5A38;font-size:.86em;color:#4A564D;display:flex;justify-content:space-between;gap:.4em}
 .f-orig.mangue{--c:#B05A0F}
 .f-orig>span:last-child:not(:first-child){white-space:nowrap}
@@ -689,7 +689,7 @@ details.aide-pliante .contenu{font-size:.85rem;color:var(--encre-doux);margin-to
 .f-tq td{padding:.08em .3em;text-align:center;border-top:.15mm solid #E4E8E4}
 .f-tq tbody tr:nth-child(even) td{background:#F6F8F6}
 .f-tq .lib{text-align:left;white-space:nowrap}
-.f-tq .tot{text-align:right;font-weight:850}
+.f-tq .tot{text-align:right;font-weight:850;padding-right:.5em}
 .f-tq td.abs{color:#AEB6AF}
 .f-tq td.prev{color:#A77A08;font-weight:800}
 .f-vide{flex:1 1 auto;display:flex;align-items:center;justify-content:center;text-align:center;color:#9AA39B;
@@ -3968,21 +3968,33 @@ function lignesCarteExcel(n){
 /* hauteur d'une ligne en points : le texte fusionné sur la largeur de la
    carte ne s'ajuste pas tout seul dans Excel, on l'estime donc ici */
 function hauteurLigneX(spec){
-  if(spec.k==='tete')return tX_(1.9)*1.35;
+  if(spec.k==='tete'){
+    const droite=texteDroiteTete(spec);
+    const cap=Math.max(6,25.4*11/tX_(0.95)*0.92);
+    return Math.max(tX_(1.9)*1.35,tX_(0.95)*1.32*Math.ceil(droite.length/cap)+4);
+  }
   if(spec.k==='blanc')return tX*1.2;
   if(spec.k==='tqTete')return tX_(0.8)*1.45;
   if(spec.k==='tqLigne')return tX_(0.92)*1.4;
   const t=spec.taille||tX;
-  const capacite=Math.max(8,(LARG_CARTE_X-(spec.total?7:0))*11/t*1.05);
+  /* largeur disponible : toute la carte, moins les deux colonnes du total ;
+     le gras et les capitales prennent plus de place */
+  const larg=LARG_CARTE_X-(spec.total?4.6+7:0);
+  const capacite=Math.max(8,larg*11/t*(spec.gras?0.85:0.95));
   const lignes=Math.max(1,Math.ceil(String(spec.texte||'').length/capacite));
   return t*1.32*lignes+2;
 }
+function texteDroiteTete(spec){
+  return (spec.produits.length?spec.produits.join(' · ').toUpperCase()+'   ':'')+(spec.total||'');
+}
 function emettreLigneCarte(reg,spec,row,col0,estHaut,estBas,p,vide,merges){
   const W=COLS_CARTE_X,fin=col0+W-1;
+  /* un cran de retrait : ni le texte ni les totaux ne touchent le bord */
   const style=function(c,font,fill,align,opt){
     opt=opt||{};
     return idXfR(reg,font,fill,idBorderR(reg,{top:estHaut,bottom:estBas||opt.bas,left:c===col0,right:c===fin,
-      couleur:p.b,tirets:vide,couleurBas:opt.couleurBas}),align,opt.valign);
+      couleur:p.b,tirets:vide,couleurBas:opt.couleurBas}),align,opt.valign,
+      ((align==='left'&&c===col0)||(align==='right'&&c>=fin-2))?1:0);
   };
   const fBlanc=idFillR(reg,null),fDef=idFontR(reg,{taille:tX});
   let out='';
@@ -3990,8 +4002,8 @@ function emettreLigneCarte(reg,spec,row,col0,estHaut,estBas,p,vide,merges){
     const fond=idFillR(reg,vide?p.t:p.m),coul=vide?p.mf:'FFFFFF';
     const runs=[{texte:String(spec.num)+'  ',gras:true,taille:tX_(1.9),couleur:coul},
                 {texte:'MÛRISSERIE',gras:true,taille:tX_(0.7),couleur:coul}];
-    const droite=(spec.produits.length?spec.produits.join(' · ').toUpperCase()+'   ':'')+(spec.total||'');
-    const largG=droite?4:W;
+    const droite=texteDroiteTete(spec);
+    const largG=droite?3:W;
     out+=celluleRicheR(col0,row,runs,style(col0,fDef,fond,'left',{valign:'center'}));
     for(let c=col0+1;c<col0+largG;c++)out+=celluleVideR(c,row,style(c,fDef,fond,null));
     merges.push(refFusion(col0,row,col0+largG-1,row));
@@ -4039,9 +4051,43 @@ function emettreLigneCarte(reg,spec,row,col0,estHaut,estBas,p,vide,merges){
   }
   return out;
 }
+/* Excel ajuste la feuille à la largeur de la page, mais ne l'agrandit
+   jamais : c'est donc ici qu'on choisit la plus grande taille de texte dont
+   les rangées remplissent la hauteur de la page sans la dépasser.
+   Largeur d'une colonne Excel en pixels : caractères × 7 + 5. */
+function tailleTexteExcel(parRang){
+  const px=function(w){return Math.floor(w*7+5);};
+  let largeurPx=0;
+  for(let c=0;c<parRang;c++){
+    largeurPx+=px(14)+6*px(4.6)+px(7);
+    if(c<parRang-1)largeurPx+=px(1.8);
+  }
+  const pageL=842-2*0.31*72,pageH=595-2*0.31*72;       /* A4 paysage, en points */
+  const echelle=Math.min(1,pageL/(largeurPx*0.75));
+  /* 6 % de réserve : Excel ne compose pas exactement comme notre estimation */
+  const dispo=pageH/echelle*0.94;
+  const entete=28+20+20+(journeeAutomatique(jourActif)?18:0)+6;
+  const hauteur=function(){
+    let h=entete;
+    for(let i=0;i<CHAMBRES.length;i+=parRang){
+      const parCarte=CHAMBRES.slice(i,i+parRang).map(lignesCarteExcel);
+      const maxL=Math.max.apply(null,parCarte.map(function(l){return l.length;}))+1;
+      for(let li=0;li<maxL;li++){
+        let m=hauteurLigneX({k:'blanc'});
+        parCarte.forEach(function(l){if(l[li])m=Math.max(m,hauteurLigneX(l[li]));});
+        h+=m;
+      }
+      if(i+parRang<CHAMBRES.length)h+=9;
+    }
+    return h;
+  };
+  /* au-delà de 17 pt, les calibres ne tiennent plus dans leur colonne */
+  for(let t=17;t>9;t-=0.5){tX=t;if(hauteur()<=dispo)return t;}
+  return 9;
+}
 function construireFeuillePlan(reg,aj){
-  tX=Math.min(20,Math.max(9,Math.round(aj.fs*1.3*2)/2));
   const PAR_RANG=4,colCarte=function(i){return 1+i*(COLS_CARTE_X+1);};
+  tX=tailleTexteExcel(PAR_RANG);
   const totalCols=PAR_RANG*(COLS_CARTE_X+1)-1;
   let xmlL='',r=1;const merges=[];
   const ligne=function(cells,ht){xmlL+='<row r="'+r+'"'+(ht?' ht="'+ht.toFixed(1)+'" customHeight="1"':'')+'>'+cells+'</row>';r++;};
@@ -4211,9 +4257,9 @@ function idBorderR(reg,sides){
     +'|'+(sides.couleur||'')+'|'+(sides.tirets?1:0)+'|'+(sides.epais?1:0)+'|'+(sides.couleurBas||'');
   return idDansRegistre(reg.borders,cle,sides);
 }
-function idXfR(reg,fontId,fillId,borderId,halign,valign){
-  const cle='x|'+fontId+'|'+fillId+'|'+borderId+'|'+(halign||'')+'|'+(valign||'');
-  return idDansRegistre(reg.xfs,cle,{fontId:fontId,fillId:fillId,borderId:borderId,halign:halign,valign:valign});
+function idXfR(reg,fontId,fillId,borderId,halign,valign,retrait){
+  const cle='x|'+fontId+'|'+fillId+'|'+borderId+'|'+(halign||'')+'|'+(valign||'')+'|'+(retrait||0);
+  return idDansRegistre(reg.xfs,cle,{fontId:fontId,fillId:fillId,borderId:borderId,halign:halign,valign:valign,retrait:retrait});
 }
 function nouveauRegistreStyles(){
   const reg={fonts:[],fills:[{cle:'none'},{cle:'gray125'}],borders:[],xfs:[]};
@@ -4262,7 +4308,7 @@ function construireStylesXlsx(reg){
     const al=x.halign||x.valign;
     return '<xf numFmtId="0" fontId="'+x.fontId+'" fillId="'+x.fillId+'" borderId="'+x.borderId+'" xfId="0" applyFont="1" applyFill="1" applyBorder="1"'
       +(al?' applyAlignment="1"><alignment'+(x.halign?' horizontal="'+x.halign+'"':'')
-        +' vertical="'+(x.valign||'top')+'" wrapText="1"/></xf>':'/>');
+        +' vertical="'+(x.valign||'top')+'" wrapText="1"'+(x.retrait?' indent="'+x.retrait+'"':'')+'/></xf>':'/>');
   }).join('');
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     +'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
@@ -4308,6 +4354,7 @@ function runW(texte,opt){
     +(opt.gras?'<w:b/>':'')
     +(opt.italique?'<w:i/>':'')
     +(opt.caps?'<w:caps/>':'')
+    +'<w:noProof/>'
     +(opt.couleur?'<w:color w:val="'+opt.couleur+'"/>':'')
     +(opt.espace?'<w:spacing w:val="'+opt.espace+'"/>':'')
     +'<w:sz w:val="'+(opt.taille||tw(1))+'"/><w:szCs w:val="'+(opt.taille||tw(1))+'"/>'
@@ -4333,6 +4380,7 @@ function bordW(cote,coul,taille,espace){
   return '<w:'+cote+' w:val="single" w:sz="'+(taille||6)+'" w:space="'+(espace||1)+'" w:color="'+coul+'"/>';
 }
 const LARG_TEXTE_W=CARTE_W-2*PAD_W;
+const RETRAIT_DROIT_W=110;              /* ~2 mm entre les totaux et le bord */
 
 function tableauCalibresWordF(b){
   const nQ=b.qualites.length;
@@ -4341,7 +4389,7 @@ function tableauCalibresWordF(b){
   const cel=function(w,texte,o){
     return '<w:tc><w:tcPr><w:tcW w:w="'+w+'" w:type="dxa"/>'
       +(o.fond?'<w:shd w:val="clear" w:color="auto" w:fill="'+o.fond+'"/>':'')
-      +'<w:tcMar><w:top w:w="0" w:type="dxa"/><w:left w:w="50" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="50" w:type="dxa"/></w:tcMar>'
+      +'<w:tcMar><w:top w:w="0" w:type="dxa"/><w:left w:w="50" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="'+(o.align==='right'?110:50)+'" w:type="dxa"/></w:tcMar>'
       +'</w:tcPr>'+paraW(runW(texte,{gras:o.gras,taille:o.taille,couleur:o.couleur}),{apres:0,align:o.align})+'</w:tc>';
   };
   const th={gras:true,taille:tw(0.78),couleur:'4A564D',fond:'EDF0ED'};
@@ -4381,9 +4429,10 @@ function teteCarteWord(n){
   prod.forEach(function(x){
     droite+=runW(' '+x.toUpperCase()+' ',{gras:true,taille:tw(0.66),couleur:COUL_PROD[x.toLowerCase()],fond:'FFFFFF'})+runW(' ',{taille:tw(0.66)});
   });
-  if(total)droite+=runW(' '+total+' ',{gras:true,taille:tw(1.02),couleur:'16211B',fond:'FFFFFF'});
+  if(total)droite+=runW('  '+total+'  ',{gras:true,taille:tw(1.02),couleur:'16211B',fond:'FFFFFF'});
   if(droite)runs+=tabW()+droite;
-  return paraW(runs,{apres:0,tabDroite:CARTE_W-2*PAD_W,align:'left'});
+  /* les chiffres s'arrêtent avant le bord de la carte, pas contre lui */
+  return paraW(runs,{apres:0,tabDroite:CARTE_W-2*PAD_W-RETRAIT_DROIT_W,align:'left'});
 }
 function corpsCarteWord(n){
   const p=paletteDe(n);
@@ -4415,16 +4464,16 @@ function corpsCarteWord(n){
         const coul=COUL_PROD[b.ton]||'77837A';
         para(runW(' '+b.texte+' ',{gras:true,taille:tw(0.8),couleur:'FFFFFF',fond:coul,espace:Math.round(fsWord*0.6)})
           +(b.total?tabW()+runW(b.total,{gras:true,taille:tw(0.92)}):''),
-          {avant:Math.round(fsWord*3),bordures:bordW('bottom',coul,8,1),tabDroite:LARG_TEXTE_W});
+          {avant:Math.round(fsWord*3),bordures:bordW('bottom',coul,8,1),tabDroite:LARG_TEXTE_W-RETRAIT_DROIT_W});
         break;}
       case 'sousTitre':
         para(runW(b.texte,{gras:true,taille:tw(1)})+(b.total?tabW()+runW(b.total,{gras:true,taille:tw(0.9),couleur:'4A564D'}):''),
-          {tabDroite:LARG_TEXTE_W});
+          {tabDroite:LARG_TEXTE_W-RETRAIT_DROIT_W});
         break;
       case 'origine':
         para((b.nom?runW(b.nom.toUpperCase()+' ',{gras:true,taille:tw(0.86),couleur:COUL_PROD[b.ton]}):'')
           +runW(b.marques,{taille:tw(0.86),couleur:'4A564D'})
-          +(b.total?tabW()+runW(b.total,{taille:tw(0.86),couleur:'4A564D'}):''),{tabDroite:LARG_TEXTE_W});
+          +(b.total?tabW()+runW(b.total,{taille:tw(0.86),couleur:'4A564D'}):''),{tabDroite:LARG_TEXTE_W-RETRAIT_DROIT_W});
         break;
       case 'tableau':c+=tableauCalibresWordF(b);break;
       case 'note-vide':
@@ -4507,14 +4556,17 @@ function exportWord(){
   try{ construireDocumentWord(aj); } finally { modeExport=false; }
 }
 function construireDocumentWord(aj){
-  /* Word compose un peu plus large que le navigateur : 5 % de marge */
-  fsWord=Math.max(8,Math.round(aj.fs*2*0.95));
+  /* Calibri, plus compact que la police de la feuille imprimée, tient à la
+     même taille ; la réserve de hauteur est prise plus bas */
+  fsWord=Math.max(8,Math.round(aj.fs*2));
   const tete=enteteWord();
   const nbR=Math.ceil(CHAMBRES.length/4);
   /* place laissée aux corps de cartes : la page moins l'en-tête, les têtes de
      cartes, les intervalles et une marge de sécurité */
   const teteCarteTw=Math.round(fsWord*1.9*10*1.25)+100;
-  const dispo=(PAGE_H_W-2*MARGE_W)-tete.hauteur-nbR*teteCarteTw-(nbR-1)*ECART_W-200;
+  /* Word compose les lignes un peu différemment d'un logiciel à l'autre :
+     14 mm de réserve, pour que la seconde rangée ne passe jamais page 2 */
+  const dispo=(PAGE_H_W-2*MARGE_W)-tete.hauteur-nbR*teteCarteTw-(nbR-1)*ECART_W-800;
   const lignes=aj.lignes&&aj.lignes.length===nbR?aj.lignes:[1,1];
   const tot=lignes.reduce(function(a,b){return a+b;},0)||1;
   const hauteurs=lignes.map(function(l){return Math.max(600,Math.floor(dispo*l/tot));});
