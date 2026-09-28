@@ -6330,6 +6330,7 @@ function appliquerRole(){
   const o=document.getElementById('ongletEquipe');
   if(o)o.hidden=!peutGerer();
   if(!peutGerer()&&ongletActif==='equipe')ouvrirOnglet('jour');
+  if(ongletApresMaj==='equipe'&&peutGerer()){ongletApresMaj=null;ouvrirOnglet('equipe');}
   majIdentite();majActionsSauvegarde();
   if(ongletActif==='equipe')renderEquipe();
 }
@@ -7370,6 +7371,7 @@ function renderInfosAppli(){
   if(!hote)return;
   hote.innerHTML=
      '<div class="ligne-info"><span>Version des données</span><span class="val num">v5</span></div>'
+    +'<div class="ligne-info"><span>Version de l\'application</span><span class="val">'+esc(libelleVersionAppli())+'</span></div>'
     +'<div class="ligne-info"><span>Mode d\'affichage</span><span class="val">'+(dejaInstallee?'Application installée':'Navigateur')+'</span></div>'
     +'<div class="ligne-info"><span>Identifiant de cet appareil</span><span class="val num" style="font-size:.78rem">'+esc(getDeviceId())+'</span></div>'
     +'<div class="ligne-info"><span>Développeur</span><span class="val">Florian Bresse</span></div>';
@@ -7602,6 +7604,140 @@ window.addEventListener('offline',majPuceSync);
 if('serviceWorker' in navigator&&(location.protocol==='https:'||/^(localhost|127\.0\.0\.1)$/.test(location.hostname))){
   navigator.serviceWorker.register('sw.js').catch(function(err){console.warn('Service worker :',err);});
 }
+
+/* ================= MISES À JOUR AUTOMATIQUES =================
+   Chaque nouvelle version publiée s'installe d'elle-même, sans fermer
+   l'application ni recharger la page. Toutes les minutes (et dès que
+   l'application revient au premier plan ou retrouve le réseau), on demande
+   au serveur l'en-tête de index.html — quelques centaines d'octets. Son
+   empreinte (ETag, à défaut la date de publication) change à chaque
+   publication.
+   La version en cours d'exécution est celle que le service worker a gardée
+   en servant la page ; sans service worker, la première réponse du serveur.
+   La page se recharge seule, mais jamais au milieu d'un travail : fiche en
+   cours, fenêtre de confirmation ouverte, champ en cours de frappe, ou
+   action il y a moins de 20 secondes. On réessaie alors un peu plus tard.
+   Rien n'est perdu : les journées sont enregistrées, la session reste
+   ouverte (un rechargement ne redemande pas le mot de passe), et l'onglet,
+   la journée affichée et la position dans la page sont rétablis. */
+var CLE_MAJ_ETAT='murisserie.majEtat';     /* ce qu'on rétablit après la mise à jour */
+var CLE_MAJ_CIBLE='murisserie.majCible';   /* la version pour laquelle on a rechargé */
+var INTERVALLE_MAJ=60*1000;
+var CALME_MAJ=20*1000;
+var versionAppli=null;      /* {tag, date} de la version affichée */
+var versionDispo=null;      /* tag de la version publiée, si différente */
+var derniereAction=Date.now();
+var majPrevenue=false;
+var ongletApresMaj=null;
+var impressionEnCours=false;
+
+function empreinteReponse(r){
+  if(!r)return null;
+  const tag=r.headers.get('etag')||r.headers.get('last-modified');
+  /* l'ETag compressé est « faible » (W/"…") : on compare le fond seulement */
+  return tag?{tag:tag.replace(/^W\//,''),date:r.headers.get('last-modified')||''}:null;
+}
+function versionServeur(){
+  return fetch('index.html',{method:'HEAD',cache:'no-store'})
+    .then(function(r){return r.ok?empreinteReponse(r):null;})
+    .catch(function(){return null;});
+}
+function versionGardee(){
+  if(!window.caches)return Promise.resolve(null);
+  return caches.match('./index.html').then(empreinteReponse).catch(function(){return null;});
+}
+function libelleVersionAppli(){
+  if(!versionAppli||!versionAppli.date)return 'Mise à jour automatique';
+  const d=new Date(versionAppli.date);
+  if(isNaN(d))return 'Mise à jour automatique';
+  return 'Publiée le '+d.toLocaleDateString('fr-FR')+' à '
+    +d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+}
+/* Quelque chose serait perdu si la page se rechargeait maintenant ? */
+function travailEnCours(){
+  if(modifEnCours!==null||etat.chambre!==null)return 'fiche';
+  if(!$('modale').hidden||connexionEnCours||impressionEnCours)return 'action';
+  const el=document.activeElement;
+  if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.tagName==='SELECT'||el.isContentEditable))return 'action';
+  /* un champ rempli puis quitté : identifiants, formulaires d'équipe et de réglages */
+  const zones=document.querySelectorAll('#ecranConnexion:not([hidden]) input,#pane-equipe:not([hidden]) input,#pane-reglages:not([hidden]) input');
+  for(let i=0;i<zones.length;i++){
+    const c=zones[i];
+    if(c.type==='checkbox'||c.type==='radio'){if(c.checked!==c.defaultChecked)return 'action';}
+    else if(c.type!=='file'&&c.value!==c.defaultValue)return 'action';
+  }
+  if(Date.now()-derniereAction<CALME_MAJ)return 'action';
+  return '';
+}
+function appliquerMaj(){
+  if(!versionDispo)return;
+  const occupe=travailEnCours();
+  if(occupe){
+    if(occupe==='fiche'&&!majPrevenue&&deverrouille){
+      majPrevenue=true;
+      toast('Nouvelle version disponible : elle s\'installera une fois la fiche enregistrée.');
+    }
+    return;
+  }
+  ss(CLE_MAJ_CIBLE,versionDispo);
+  ss(CLE_MAJ_ETAT,JSON.stringify({onglet:ongletActif,vue:vueHisto,jour:jourActif,y:Math.round(window.scrollY||0)}));
+  location.reload();
+}
+var verificationMaj=null;
+function verifierMaj(){
+  if(verificationMaj||navigator.onLine===false)return verificationMaj;
+  verificationMaj=versionServeur().then(function(v){
+    verificationMaj=null;
+    if(!v)return;
+    if(!versionAppli){versionAppli=v;return;}
+    if(v.tag===versionAppli.tag){versionDispo=null;return;}
+    /* Déjà rechargé pour cette version et toujours l'ancienne : une copie en
+       cache s'est interposée. On ne boucle pas ; elle viendra à la prochaine
+       ouverture. */
+    if(ss(CLE_MAJ_CIBLE)===v.tag){versionAppli=v;return;}
+    versionDispo=v.tag;
+    appliquerMaj();
+  });
+  return verificationMaj;
+}
+['pointerdown','keydown','wheel','touchstart'].forEach(function(t){
+  document.addEventListener(t,function(){derniereAction=Date.now();},{passive:true,capture:true});
+});
+window.addEventListener('beforeprint',function(){impressionEnCours=true;});
+window.addEventListener('afterprint',function(){impressionEnCours=false;derniereAction=Date.now();});
+document.addEventListener('visibilitychange',function(){if(!document.hidden)verifierMaj();});
+window.addEventListener('online',function(){verifierMaj();});
+window.addEventListener('focus',function(){verifierMaj();});
+setInterval(function(){
+  /* une mise à jour en attente part dès que la voie est libre */
+  if(versionDispo)appliquerMaj();
+  if(!document.hidden)verifierMaj();
+},INTERVALLE_MAJ);
+/* La version en cours : celle gardée par le service worker en servant la
+   page (il l'enregistre juste après l'avoir transmise, d'où le délai). */
+setTimeout(function(){
+  versionGardee().then(function(v){
+    if(v&&!versionAppli)versionAppli=v;
+    const cible=ss(CLE_MAJ_CIBLE);
+    if(versionAppli&&cible&&versionAppli.tag===cible)ss(CLE_MAJ_CIBLE,null);
+    verifierMaj();
+    if(ongletActif==='reglages')renderInfosAppli();
+  });
+},3000);
+/* Retour d'une mise à jour : on rétablit ce qui était à l'écran. */
+(function(){
+  const brut=ss(CLE_MAJ_ETAT);
+  if(!brut)return;
+  ss(CLE_MAJ_ETAT,null);
+  let e=null;
+  try{e=JSON.parse(brut);}catch(x){return;}
+  if(!e)return;
+  if(e.jour&&e.jour!==jourActif&&jourValide(e.jour)&&e.jour<=isoJour())changerJour(e.jour);
+  if(e.onglet==='equipe')ongletApresMaj='equipe';
+  else if(e.onglet==='histo'||e.onglet==='reglages')ouvrirOnglet(e.onglet,e.onglet==='histo'?e.vue:undefined);
+  if(e.y)setTimeout(function(){window.scrollTo(0,e.y);},ongletActif==='jour'?0:400);
+  setTimeout(function(){if(deverrouille)toast('Application mise à jour.');},800);
+})();
 /* L'écran de connexion se pose avant tout : rien de l'application ne doit
    apparaître, même un instant, avant le mot de passe. Un simple rechargement
    de la page, lui, ne redemande rien. */
