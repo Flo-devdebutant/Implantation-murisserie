@@ -7,7 +7,11 @@
 
    — La page (index.html) : le réseau d'abord, pour recevoir aussitôt chaque
      nouvelle version ; la copie gardée si le réseau ne répond pas dans les
-     4 secondes ou s'il est absent.
+     4 secondes ou s'il est absent. La demande au réseau revalide toujours la
+     copie du navigateur (cache: 'no-cache') : sans cela, une ancienne version
+     pourrait resservir jusqu'à dix minutes après une publication. La page
+     compare la copie gardée ici à celle du serveur pour se mettre à jour
+     d'elle-même (voir « MISES À JOUR AUTOMATIQUES » dans index.html).
    — Les scripts Firebase : leur adresse porte leur numéro de version, leur
      contenu ne change donc jamais ; la copie gardée d'abord.
    — Tout le reste (Firestore, comptes) passe sans être touché : Firebase gère
@@ -47,7 +51,7 @@ function garder(requete, reponse) {
 function reseauAvecDelai(requete) {
   return new Promise((ok, ko) => {
     const minuteur = setTimeout(() => ko(new Error('délai')), DELAI_RESEAU);
-    fetch(requete).then((r) => { clearTimeout(minuteur); ok(r); },
+    fetch(requete.url, { cache: 'no-cache', credentials: 'same-origin' }).then((r) => { clearTimeout(minuteur); ok(r); },
                         (err) => { clearTimeout(minuteur); ko(err); });
   });
 }
