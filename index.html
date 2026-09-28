@@ -568,125 +568,133 @@ details.aide-pliante .contenu{font-size:.85rem;color:var(--encre-doux);margin-to
 .actions-compte .lien{margin:0 8px 6px 0}
 
 /* ---------- notification ---------- */
-/* bloc de mesure : hors écran, jamais visible, jamais imprimé */
-#mesure{position:absolute;left:-30000px;top:0;visibility:hidden;pointer-events:none;background:#fff}
-@media print{#mesure{display:none!important}}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(12px);background:var(--encre);color:#fff;padding:12px 19px;border-radius:var(--rayon-petit);font-size:.88rem;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:70;max-width:calc(100% - 32px);box-shadow:var(--ombre)}
 #toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(prefers-reduced-motion:reduce){*,.pane,.modale{animation:none!important;transition:none!important}}
 
-/* Pas de « size » ici. Déclarer size:A4 landscape alors que la feuille
-   choisie est en portrait fait composer le navigateur dans une boîte de
-   297x210 mm qu'il réduit ensuite pour l'ajuster à la largeur de la feuille :
-   la hauteur utile tombe à 194 mm — d'où une coupure après deux rangées — et
-   le contenu se tasse dans le haut de la page. Sans « size », la boîte de
-   page suit la feuille réellement choisie et la mise en page s'y adapte. */
-@page{margin:8mm}
+/* =========================================================================
+   FEUILLE IMPRIMÉE (Imprimer / PDF)
+   Une feuille à part, construite au moment d'imprimer (preparerFeuille) :
+   l'écran et le papier n'ont plus à se partager les mêmes cartes.
+     — toujours une seule page A4 en paysage : quatre chambres par rangée,
+       deux rangées ;
+     — deux chambres d'une même rangée ont toujours la même taille ;
+     — la taille du texte est calculée à chaque impression : la plus grande
+       qui laisse tout tenir sur la page. Une journée légère s'imprime donc en
+       gros caractères, une journée chargée en plus petits, jamais sur deux
+       pages.
+   Toutes les tailles des cartes sont en « em » : changer --fs agrandit ou
+   réduit la carte entière d'un seul geste.
+   Hors impression, la feuille reste hors de l'écran, invisible, mais mise en
+   page : c'est là qu'on la mesure, dans les dimensions exactes du papier.
+   ========================================================================= */
+@page{size:A4 landscape;margin:8mm}
+#feuille{
+  position:absolute;left:-30000px;top:0;visibility:hidden;pointer-events:none;
+  box-sizing:border-box;width:281mm;height:193mm;overflow:hidden;
+  display:flex;flex-direction:column;background:#fff;color:#16211B;
+  font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:9pt;line-height:1.2;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;
+}
+#feuille:empty{display:none}
+#feuille *{box-sizing:border-box}
 @media print{
-  body{background:#fff;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .entete,.colonne-saisie,.noprint,#zoneVerrou{display:none!important}
-  /* Le plan s'imprime même si un autre onglet est à l'écran : le bouton PDF
-     de l'historique sortait sinon la liste des journées. Le sélecteur par
-     identifiant l'emporte sur la règle [hidden]. */
-  #pane-jour{display:block!important}
-  #pane-histo,#pane-reglages{display:none!important}
-  /* Facteur d'échelle calculé avant impression. « zoom » agrandit la mise en
-     page hauteur comprise — un simple transform laisserait la place d'origine
-     dans le flux et créerait une page blanche. La largeur n'est pas corrigée :
-     un pourcentage se résout déjà dans le repère zoomé. */
-  .colonne-plan{zoom:var(--ech-pay,1)}
-  /* Révéler ici un onglet masqué le fait passer de display:none à visible, ce
-     qui RELANCE l'animation d'apparition. Son image de départ étant opacity:0,
-     l'instantané d'impression sortait une page entièrement blanche. */
-  .pane{animation:none!important;opacity:1!important;transform:none!important}
-  #toast{display:none!important}
-  .colonnes{display:block}
-  .panneau{border:0;padding:0;border-radius:0;background:none}
-  .plan-tete{margin-bottom:2mm}
-  .plan-tete h2{font-size:13.2pt}
-  .plan-tete .sous{font-size:9.6pt}
-  .sous-legende{font-size:8.2pt;margin-top:1px}
-  .note-auto{font-size:7.9pt;padding:.5mm 1.4mm;margin-top:1mm;border-width:.4pt}
-  /* La grille donne des cartes de hauteur égale sur une même rangée ; des
-     blocs en ligne les laissaient se caler sur leur contenu, en escalier. */
-  .plan{display:grid;grid-template-columns:repeat(4,1fr);gap:2mm}
-  .chambre{
-    break-inside:avoid;page-break-inside:avoid;
-    padding:1.4mm 1.8mm;border:.4pt solid #444;border-radius:0;
-    font-size:7.7pt;line-height:1.12;
-  }
-  .chambre-num{font-size:13.2pt}
-  .chambre-tete{padding-bottom:.6mm;margin-bottom:.8mm;border-bottom:.8pt solid #000}
-  .chambre-tete .titre{font-size:6.7pt}
-  .pr-tete{font-size:7.0pt;padding-bottom:.2mm;margin-top:.7mm}
-  .pr-nom{font-size:6.5pt;padding:.25mm 1.3mm;border-radius:1px}
-  .info-l,.var-t{font-size:7.8pt}
-  .info-l{margin:.2mm 0}
-  .cons-ligne{font-size:7.9pt;font-weight:600;margin:.7mm 0;padding:.5mm 1mm}
-  .var-m,.rien{font-size:7.4pt}
-  /* Sur papier, le gris tenu à l'écran perd beaucoup : tout ce qui porte une
-     information passe en noir. Ne restent en gris que les croix « qualité
-     absente », dont la pâleur est justement le signal, et la mention des
-     chambres vides, qui ne doit pas peser autant qu'une chambre chargée. */
-  .chambre-tete .titre,.tot-ch,.chargement,.info-l,.var-m,.var-t,.rien,
-  .orig-marq,.orig-l .num,.pr-tete,.tq th,.tq td,.compteur,.sous-legende{color:#16211B}
-  .tq td.abs{color:#7B857D}
-  .vide-grand{color:#4A564D}
-  .vide-grand{font-size:10.8pt;min-height:8mm;padding:2mm 1mm;letter-spacing:.09em}
-  .note-libre{font-size:7.9pt;padding:.5mm 1.2mm;margin:.8mm 0;border-width:.4pt}
-  .prevision-l{font-size:7.6pt;padding:.5mm 1.2mm;margin:.8mm 0;border-width:.4pt;color:#5E430A}
-  .orig-l{margin-top:.6mm}
-  .orig-nom{margin-right:1.2mm}
-  .orig-nom{font-size:6.7pt}
-  .orig-marq{font-size:7.2pt}
-  .orig-l .num{font-size:7.2pt}
-  .ecran-seul{display:none}
-  .print-seul{display:inline}
-  .var-b{margin-top:.5mm;padding-left:0;border-left:0}
-
-  .var-t .vq{font-weight:400;color:#444}
-  .var-t .vq::before{content:"("}
-  .var-t .vq::after{content:")"}
-  /* la ligne des marques porte désormais l'origine : elle a sa propre ligne,
-     le tiret de continuation d'autrefois n'a plus lieu d'être */
-  .var-m{color:#444}
-  .chambre.hors-service{background:repeating-linear-gradient(135deg,#F8E7E3,#F8E7E3 1.1mm,#EDCEC7 1.1mm,#EDCEC7 2.2mm);border:1pt solid #8E2A1D}
-  .chambre.requisitionnee{background:#E3D6EE;border:1pt solid #6B4A82}
-  /* la tranche de couleur et le fond du mode survivent au raccourci « border » */
-  .chambre.mode-froid{border-left:1.6pt solid #4A6B78;background:#BEDCEE}
-  .chambre.mode-affinage{border-left:1.6pt solid #2C5A38;background:#CBE9CF}
-  .chambre.mode-chauffe{border-left:1.6pt solid #B05A0F;background:#FBD5A6}
-  .chambre.mode-adefinir{border-left:1.6pt solid #B8860B;
-    background:repeating-linear-gradient(135deg,#F8F0CE,#F8F0CE 1.1mm,#EFE2A6 1.1mm,#EFE2A6 2.2mm)}
-  .cons-ligne.froid{background:#B2D3E2}
-  .cons-ligne.affinage{background:#BADCC1}
-  .cons-ligne.chauffe{background:#F5CB9C}
-  .cons-ligne.requis{background:#CDB6E0}
-  /* bannières : bien visibles, sans masquer le contenu */
-  .bandeau-carte{font-size:10.2pt;padding:.8mm 1mm;margin:.8mm 0;letter-spacing:.04em}
-  /* tableaux de calibres compacts */
-  .tq{font-size:7.6pt;margin:.3mm 0 .6mm}
-  .tq th{font-size:6.7pt;padding:0 1px .2mm}
-  .tq td{padding:.05mm 1px}
-  /* pastilles de produit : le repère le plus immédiat sur la feuille */
-  .produits{gap:1mm;margin:.5mm 0}
-  .produits .badge{font-size:7.2pt;padding:.2mm 1.2mm;border-radius:2px}
-  .pr-nom{font-size:6.5pt}
+  html,body{background:#fff!important;margin:0!important;padding:0!important;overflow:visible!important}
+  body>*:not(#feuille){display:none!important}
+  #feuille{position:static;left:auto;visibility:visible;break-after:avoid;page-break-after:avoid}
 }
-/* Feuille imprimée en portrait : deux colonnes de quatre au lieu de quatre
-   colonnes de deux, pour garder des cartes lisibles sur une seule page. */
-@media print and (orientation:portrait){
-  .colonne-plan{zoom:var(--ech-por,1)}
-  .plan{grid-template-columns:repeat(2,1fr);gap:2.5mm}
-  .chambre{font-size:7.8pt;padding:1.8mm 2.2mm}
-  .chambre-num{font-size:13.4pt}
-  .info-l,.var-t,.chargement,.cons-ligne{font-size:8.3pt}
-  .var-m,.rien{font-size:7.8pt}
-
-  .tq{font-size:7.8pt}
-  .tq th{font-size:6.9pt}
-  .produits .badge{font-size:7.4pt}
-}
+/* ---------- en-tête de la feuille ---------- */
+.f-tete{display:flex;align-items:flex-end;justify-content:space-between;gap:5mm;
+  padding-bottom:1.6mm;border-bottom:.7mm solid #1C3D24}
+.f-titre{font-size:16pt;font-weight:800;letter-spacing:-.01em;color:#1C3D24;line-height:1.1}
+.f-date{font-size:10.5pt;color:#4A564D;margin-top:.8mm;font-weight:600}
+.f-date::first-letter{text-transform:uppercase}
+.f-chiffres{display:flex;gap:2mm}
+.f-chiffre{border:.3mm solid #CFD6D0;border-radius:2mm;padding:1mm 2.8mm;text-align:right;background:#F6F8F6}
+.f-chiffre b{display:block;font-size:13pt;line-height:1.1;color:#1C3D24;font-variant-numeric:tabular-nums}
+.f-chiffre span{display:block;font-size:6.4pt;text-transform:uppercase;letter-spacing:.08em;color:#5F6B62;font-weight:700}
+.f-legende{display:flex;flex-wrap:wrap;align-items:center;gap:1mm 3.4mm;font-size:7.4pt;color:#3A463D;margin:1.6mm 0 2mm}
+.f-leg{display:inline-flex;align-items:center;gap:1.2mm}
+.f-leg i{display:inline-block;width:3.4mm;height:3.4mm;border-radius:.8mm;background:var(--m)}
+.f-leg.hachure i{background:repeating-linear-gradient(135deg,var(--m),var(--m) .5mm,var(--t) .5mm,var(--t) 1.1mm)}
+.f-leg.l-vide i{background:#fff;border:.3mm dashed #9AA39B}
+.f-leg-sep{width:.3mm;height:3.4mm;background:#CFD6D0}
+.f-leg b{font-weight:800}
+.f-auto{font-size:8pt;font-weight:600;color:#6B4C0B;background:#FFF3DC;border:.3mm solid #EBCF8A;
+  border-radius:1.5mm;padding:1.2mm 2.4mm;margin-bottom:2.4mm}
+.f-pied{display:flex;justify-content:space-between;gap:4mm;font-size:6.6pt;color:#7B857D;
+  padding-top:1.3mm;margin-top:2mm;border-top:.2mm solid #D5DBD6}
+/* ---------- grille des chambres ---------- */
+.f-grille{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2.4mm;
+  font-size:var(--fs,9pt);line-height:1.22;align-items:stretch}
+/* teintes des modes : couleur pleine (--m), fond pâle (--t), filet (--b),
+   texte foncé sur fond pâle (--mf) */
+.f-longue{height:auto!important;overflow:visible!important;display:block!important}
+.f-longue .f-grille{flex:none}
+.f-longue .f-carte{break-inside:avoid;page-break-inside:avoid}
+.f-carte{--m:#8A948C;--t:#F2F4F2;--b:#C9D0CA;--mf:#3A463D;
+  display:flex;flex-direction:column;min-width:0;overflow:hidden;
+  border:.35mm solid var(--b);border-radius:2.2mm;background:#fff}
+.m-froid{--m:#2F6F9F;--t:#DDEAF5;--b:#9DBFDA;--mf:#1D4A6B}
+.m-affinage{--m:#2E7A45;--t:#DDEFE2;--b:#A1CDAE;--mf:#1C4F2B}
+.m-chauffe{--m:#C0601A;--t:#FBE5D2;--b:#EDB88C;--mf:#7F3D0C}
+.m-adefinir{--m:#A77A08;--t:#FAF0CF;--b:#E2CA7B;--mf:#6B4C0B}
+.m-requis{--m:#6F4F9B;--t:#ECE4F5;--b:#BEA9D8;--mf:#4A3170}
+.m-hs{--m:#A8362A;--t:#F8E2DE;--b:#DCA29A;--mf:#6E1F16}
+.m-vide{--m:#AEB6AF;--t:#F6F7F6;--b:#C9D0CA;--mf:#6B756D;border-style:dashed}
+/* tête de carte : la couleur du mode, lisible de loin sur la porte */
+.f-ct{display:flex;flex-wrap:wrap;align-items:center;gap:.2em .45em;padding:.32em .55em;background:var(--m);color:#fff}
+.m-adefinir .f-ct,.m-hs .f-ct{background:repeating-linear-gradient(135deg,var(--m),var(--m) 1.6mm,var(--mf) 1.6mm,var(--mf) 3.2mm)}
+.m-vide .f-ct{background:var(--t);color:var(--mf);border-bottom:.3mm dashed var(--b)}
+.f-no{font-size:1.9em;font-weight:850;line-height:1;min-width:1em;text-align:center;font-variant-numeric:tabular-nums}
+.f-mur{font-size:.68em;font-weight:800;letter-spacing:.12em;white-space:nowrap;text-transform:uppercase;opacity:.92;line-height:1.1}
+.f-mur span{display:block;font-size:1.32em;letter-spacing:.02em;text-transform:none;opacity:1}
+.f-ct .f-droite{margin-left:auto;display:flex;align-items:center;gap:.35em;flex-wrap:wrap;justify-content:flex-end}
+.f-pastille{font-size:.66em;font-weight:800;letter-spacing:.1em;text-transform:uppercase;background:#fff;
+  border-radius:1em;padding:.18em .6em;line-height:1.2}
+.f-pastille.avocat{color:#2C5A38}
+.f-pastille.mangue{color:#B05A0F}
+.f-total{font-size:1.02em;font-weight:800;background:rgba(255,255,255,.95);color:#16211B;border-radius:1em;
+  padding:.1em .6em;white-space:nowrap;font-variant-numeric:tabular-nums}
+/* corps */
+.f-cb{flex:1 1 auto;display:flex;flex-direction:column;gap:.26em;padding:.45em .55em .55em;overflow-wrap:anywhere}
+.f-cons{background:var(--t);color:var(--mf);border-left:.32em solid var(--m);border-radius:.3em;
+  padding:.28em .5em;font-weight:800;font-size:1.1em}
+.f-cons small{display:block;font-size:.78em;font-weight:600}
+.f-alerte{background:#A8362A;color:#fff;font-weight:800;letter-spacing:.05em;text-align:center;
+  border-radius:.3em;padding:.2em .4em;font-size:.9em}
+.f-info{font-size:.95em;color:#26322A}
+.f-info b{font-weight:700;color:#4A564D}
+.f-ban{text-align:center;font-weight:850;letter-spacing:.07em;color:#fff;border-radius:.3em;padding:.32em .4em;font-size:1.08em}
+.f-ban.identA{background:#2C5A38}.f-ban.identM{background:#B05A0F}.f-ban.etat{background:#A8362A}
+.f-ban.requis{background:#6F4F9B}.f-ban.adefinir{background:#A77A08}
+.f-note{background:#FFF6DF;border:.25mm solid #EBCF8A;color:#6B4C0B;border-radius:.3em;padding:.26em .45em;font-weight:650}
+.f-prev{background:#FFFBF1;border:.25mm dashed #D9B45C;color:#6B4C0B;border-radius:.3em;padding:.24em .45em;font-weight:600;font-size:.92em}
+.f-prod{--c:#2C5A38;display:flex;align-items:center;justify-content:space-between;gap:.4em;
+  margin-top:.3em;padding-bottom:.16em;border-bottom:.3mm solid var(--c)}
+.f-prod.mangue{--c:#B05A0F}.f-prod.neutre{--c:#77837A}
+.f-prod>span:first-child{background:var(--c);color:#fff;font-weight:850;letter-spacing:.1em;font-size:.8em;
+  padding:.14em .6em;border-radius:1em}
+.f-prod .q{font-weight:800;font-size:.92em;font-variant-numeric:tabular-nums}
+.f-var{display:flex;justify-content:space-between;align-items:baseline;gap:.4em;font-weight:800;margin-top:.12em}
+.f-var .q{font-weight:600;color:#4A564D;font-size:.9em;white-space:nowrap}
+.f-orig{--c:#2C5A38;font-size:.86em;color:#4A564D;display:flex;justify-content:space-between;gap:.4em}
+.f-orig.mangue{--c:#B05A0F}
+.f-orig>span:last-child:not(:first-child){white-space:nowrap}
+.f-orig b{color:var(--c);text-transform:uppercase;letter-spacing:.05em;font-weight:800;margin-right:.35em}
+.f-tq{width:100%;border-collapse:separate;border-spacing:0;font-size:.92em;border:.25mm solid #D5DBD6;border-radius:.3em;
+  overflow:hidden;font-variant-numeric:tabular-nums;margin-bottom:.1em}
+.f-tq th{background:#EDF0ED;color:#4A564D;font-weight:800;font-size:.84em;padding:.12em .3em;text-align:center;letter-spacing:.04em}
+.f-tq td{padding:.08em .3em;text-align:center;border-top:.15mm solid #E4E8E4}
+.f-tq tbody tr:nth-child(even) td{background:#F6F8F6}
+.f-tq .lib{text-align:left;white-space:nowrap}
+.f-tq .tot{text-align:right;font-weight:850}
+.f-tq td.abs{color:#AEB6AF}
+.f-tq td.prev{color:#A77A08;font-weight:800}
+.f-vide{flex:1 1 auto;display:flex;align-items:center;justify-content:center;text-align:center;color:#9AA39B;
+  font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:1.1em;padding:.4em 0}
+.f-rien{font-style:italic;color:#6B756D;font-size:.9em}
 </style>
 
 <style>
@@ -702,10 +710,8 @@ details.aide-pliante .contenu{font-size:.85rem;color:var(--encre-doux);margin-to
    et les teintes des modes de conservation réservées au plan : ce sont elles
    qui portent l'information. La couleur ne la porte jamais seule : un mot ou
    une forme l'accompagne toujours.
-   Tout ce bloc est réservé à l'écran : la feuille imprimée, réglée au
-   millimètre plus haut, ne change pas. Les retouches des cartes de chambre
-   visent « #pane-jour » : le bloc de mesure de l'impression (#mesure), qui
-   se trouve hors de cet onglet, n'en est donc pas affecté.
+   Tout ce bloc est réservé à l'écran : la feuille imprimée (#feuille) a sa
+   propre mise en page, plus haut.
    ========================================================================= */
 .sprite{position:absolute;width:0;height:0;overflow:hidden}
 svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.9;
@@ -1220,8 +1226,7 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
 /* =========================================================================
    INTERFACE (suite) : cartes de chambre, saisie, historique, analyses, équipe
    Écran seulement, comme le bloc précédent. Les cartes de chambre ne sont
-   retouchées qu'à l'intérieur de #pane-jour : la feuille imprimée et le bloc
-   de mesure de l'impression n'en voient rien.
+   retouchées qu'à l'intérieur de #pane-jour.
    ========================================================================= */
 @media screen{
   :root{
@@ -1811,7 +1816,6 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
     </section>
   </div>
 
-  <div id="mesure" aria-hidden="true"></div>
   <datalist id="liste-origines"></datalist>
 
   <div class="modale" id="modale" hidden>
@@ -1835,6 +1839,7 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
 
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
+<div id="feuille" aria-hidden="true"></div>
 
 <script>
 /* ================= REFERENTIEL ================= */
@@ -1870,20 +1875,6 @@ const ORIGINE_DEFAUT='Origine non précisée';   /* reprise des fiches d'avant l
 const SIGNE_PREVU='–';    /* qualité prévue, quantité pas encore connue */
 const SIGNE_ABSENT='×';   /* qualité absente de ce calibre */
 const CLE='murisserie.journees.v5';
-/* teintes reprises à l'identique dans les exports Word et Excel */
-const TEINTE_MODE={froid:'B2D3E2',affinage:'BADCC1',chauffe:'F5CB9C',requis:'CDB6E0'};
-/* fond de la carte entière, plus pâle que le bandeau de conservation */
-const FOND_CARTE={froid:'BEDCEE',affinage:'CBE9CF',chauffe:'FBD5A6',adefinir:'F3E7A0',
-                  requis:'E3D6EE',hs:'F2CDC6'};
-function fondCarte(n){
-  const f=ficheDe(n);
-  if(!f)return null;
-  normaliser(f);
-  const fam=ETATS[f.etat].famille;
-  if(fam==='hs')return FOND_CARTE.hs;
-  if(fam==='requis')return FOND_CARTE.requis;
-  return FOND_CARTE[f.conservation.type||'adefinir']||null;
-}
 const CLE_V4='murisserie.journees.v4';
 
 /* ================= DATES ================= */
@@ -3926,216 +3917,238 @@ function lignesProjection(){
   return t;
 }
 
-/* ---- carte chambre pour la feuille « Plan » : mêmes blocs que l'écran ---- */
-const CARD_W_X=9;                    /* 1 libellé + 6 qualités + total + marge */
-const COL_TOT_X=8;
+/* ---- feuille « Plan » de l'Excel : la même feuille que l'impression ----
+   Quatre chambres par rangée, A4 paysage ajusté à une page, mêmes couleurs.
+   Chaque chambre occupe huit colonnes (calibre, six qualités, total) ; deux
+   chambres d'une rangée partagent les mêmes lignes, donc la même hauteur. */
+const COLS_CARTE_X=8;
+const LARG_CARTE_X=14+6*4.6+7;              /* en caractères */
+var tX=12;                                  /* taille de base du texte, en points */
+function tX_(k){return Math.max(7,Math.round(tX*k*2)/2);}
 function lignesCarteExcel(n){
-  const out=[];
+  const out=[],p=paletteDe(n);
+  let produits=[];
+  blocsChambre(n).forEach(function(b){if(b.t==='produits')produits=b.liste;});
   blocsChambre(n).forEach(function(b){
     switch(b.t){
-      case 'entete':out.push({k:'entete',num:b.num,total:b.total});break;
-      case 'banniere':out.push({k:'banniere',texte:b.texte,ton:b.ton});break;
-      case 'cons':out.push({k:'texte',texte:b.texte,gras:true,taille:11,
-        fond:TEINTE_MODE[b.ton]||'E2EDE4'});break;
-      case 'info':out.push({k:'texte',texte:b.texte,taille:10,couleur:'333333'});break;
-      case 'section':out.push({k:'texte',texte:b.texte+(b.total?'   '+b.total:''),gras:true,taille:11,
-        couleur:(b.ton==='avocat'||b.ton==='mangue')?'FFFFFF':'444444',
-        fond:(b.ton==='avocat'?'2C5A38':(b.ton==='mangue'?'B05A0F':null)),
-        separateur:true});break;
-      case 'sousTitre':
-        out.push({k:'texte',texte:b.texte+(b.total?'   '+b.total:''),gras:true,taille:10});
-        if(b.extra)out.push({k:'texte',texte:b.extra,taille:9,couleur:'63706A'});
-        break;
+      case 'entete':out.push({k:'tete',num:b.num,total:b.total,produits:produits});break;
+      case 'banniere':out.push({k:'texte',texte:b.texte,gras:true,taille:tX_(1.08),couleur:'FFFFFF',
+        fond:COUL_BANNIERE[b.ton]||'A8362A',align:'center'});break;
+      case 'cons':{
+        const d=decouperCons(b.texte);
+        out.push({k:'texte',texte:d.tete,gras:true,taille:tX_(1.1),couleur:p.mf,fond:p.t});
+        if(d.suite)out.push({k:'texte',texte:d.suite,gras:true,taille:tX_(0.86),couleur:p.mf,fond:p.t});
+        if(d.alerte)out.push({k:'texte',texte:d.alerte,gras:true,taille:tX_(0.9),couleur:'FFFFFF',fond:'A8362A',align:'center'});
+        break;}
+      case 'info':out.push({k:'texte',texte:b.texte,taille:tX_(0.95),couleur:'26322A'});break;
+      case 'section':out.push({k:'texte',texte:'  '+b.texte,gras:true,taille:tX_(0.85),couleur:'FFFFFF',
+        fond:COUL_PROD[b.ton]||'77837A',total:b.total});break;
+      case 'sousTitre':out.push({k:'texte',texte:b.texte,gras:true,taille:tX_(1),total:b.total,couleurTotal:'4A564D'});break;
       case 'tableau':
         out.push({k:'tqTete',qualites:b.qualites});
-        b.lignes.forEach(function(l){out.push({k:'tqLigne',lib:l.lib,cellules:l.cellules,tot:l.tot});});
+        b.lignes.forEach(function(l,i){out.push({k:'tqLigne',lib:l.lib,cellules:l.cellules,tot:l.tot,zebre:i%2===1});});
         break;
-      case 'produits':out.push({k:'produits',liste:b.liste});break;
-      case 'note-libre':out.push({k:'texte',texte:b.texte,gras:true,taille:10,couleur:'7A560E',fond:'FFF3DC'});break;
-      case 'prevision':out.push({k:'texte',texte:b.texte,gras:true,taille:9,couleur:'7A560E',fond:'FFF7E8'});break;
+      case 'note-libre':out.push({k:'texte',texte:b.texte,gras:true,taille:tX_(1),couleur:'6B4C0B',fond:'FFF6DF'});break;
+      case 'prevision':out.push({k:'texte',texte:b.texte,gras:true,taille:tX_(0.92),couleur:'6B4C0B',fond:'FFFBF1'});break;
       case 'origine':
-        out.push({k:'texte',texte:(b.nom?b.nom+' — ':'')+b.marques+(b.total?'   '+b.total:''),
-          gras:!!b.nom,taille:9,couleur:b.nom?(b.ton==='avocat'?'2C5A38':'B05A0F'):'63706A'});
+        out.push({k:'texte',texte:(b.nom?b.nom.toUpperCase()+'  ':'')+b.marques,taille:tX_(0.86),
+          couleur:b.nom?COUL_PROD[b.ton]:'4A564D',gras:!!b.nom,total:b.total,couleurTotal:'4A564D'});
         break;
-      case 'note-vide':out.push({k:'texte',texte:b.texte.toUpperCase(),gras:true,taille:13,
-        couleur:'A9B3A8',align:'center'});break;
-      case 'note':out.push({k:'texte',texte:b.texte,italique:true,couleur:'999999',taille:9});break;
+      case 'note-vide':
+        out.push({k:'blanc'});
+        out.push({k:'texte',texte:(b.alt||b.texte).toUpperCase(),gras:true,taille:tX_(1.1),couleur:'9AA39B',align:'center'});
+        break;
+      case 'note':out.push({k:'texte',texte:b.alt||b.texte,italique:true,couleur:'6B756D',taille:tX_(0.9)});break;
     }
   });
   return out;
 }
-function emettreLigneCarte(reg,spec,row,colStart,width,estHaut,estBas,mergesListe,fond){
+/* hauteur d'une ligne en points : le texte fusionné sur la largeur de la
+   carte ne s'ajuste pas tout seul dans Excel, on l'estime donc ici */
+function hauteurLigneX(spec){
+  if(spec.k==='tete')return tX_(1.9)*1.35;
+  if(spec.k==='blanc')return tX*1.2;
+  if(spec.k==='tqTete')return tX_(0.8)*1.45;
+  if(spec.k==='tqLigne')return tX_(0.92)*1.4;
+  const t=spec.taille||tX;
+  const capacite=Math.max(8,(LARG_CARTE_X-(spec.total?7:0))*11/t*1.05);
+  const lignes=Math.max(1,Math.ceil(String(spec.texte||'').length/capacite));
+  return t*1.32*lignes+2;
+}
+function emettreLigneCarte(reg,spec,row,col0,estHaut,estBas,p,vide,merges){
+  const W=COLS_CARTE_X,fin=col0+W-1;
+  const style=function(c,font,fill,align,opt){
+    opt=opt||{};
+    return idXfR(reg,font,fill,idBorderR(reg,{top:estHaut,bottom:estBas||opt.bas,left:c===col0,right:c===fin,
+      couleur:p.b,tirets:vide,couleurBas:opt.couleurBas}),align,opt.valign);
+  };
+  const fBlanc=idFillR(reg,null),fDef=idFontR(reg,{taille:tX});
   let out='';
-  const fillId=idFillR(reg,spec.fond||fond||null);
-  const bas=estBas||spec.kind==='entete'||spec.k==='entete'||spec.separateur;
-  const haut=estHaut;
-  const fDefaut=idFontR(reg,{});
-  const bG=idBorderR(reg,{top:haut,bottom:bas,left:true});
-  const bM=idBorderR(reg,{top:haut,bottom:bas});
-  const bD=idBorderR(reg,{top:haut,bottom:bas,right:true});
-
-  if(spec.k==='entete'){
-    const leftW=width-3;
-    const bGe=idBorderR(reg,{top:haut,bottom:true,left:true});
-    const bMe=idBorderR(reg,{top:haut,bottom:true});
-    const bDe=idBorderR(reg,{top:haut,bottom:true,right:true});
-    out+=celluleTexteR(colStart,row,'MÛRISSERIE '+spec.num,
-      idXfR(reg,idFontR(reg,{gras:true,couleur:'16211B',taille:13}),fillId,bGe,'left'));
-    for(let c=1;c<leftW;c++)out+=celluleVideR(colStart+c,row,idXfR(reg,fDefaut,fillId,bMe,null));
-    mergesListe.push(refFusion(colStart,row,colStart+leftW-1,row));
-    out+=celluleTexteR(colStart+leftW,row,spec.total||'',
-      idXfR(reg,idFontR(reg,{couleur:'555555',taille:11}),fillId,bMe,'right'));
-    for(let c=leftW+1;c<width-1;c++)out+=celluleVideR(colStart+c,row,idXfR(reg,fDefaut,fillId,bMe,null));
-    out+=celluleVideR(colStart+width-1,row,idXfR(reg,fDefaut,fillId,bDe,null));
-    mergesListe.push(refFusion(colStart+leftW,row,colStart+width-1,row));
+  if(spec.k==='tete'){
+    const fond=idFillR(reg,vide?p.t:p.m),coul=vide?p.mf:'FFFFFF';
+    const runs=[{texte:String(spec.num)+'  ',gras:true,taille:tX_(1.9),couleur:coul},
+                {texte:'MÛRISSERIE',gras:true,taille:tX_(0.7),couleur:coul}];
+    const droite=(spec.produits.length?spec.produits.join(' · ').toUpperCase()+'   ':'')+(spec.total||'');
+    const largG=droite?4:W;
+    out+=celluleRicheR(col0,row,runs,style(col0,fDef,fond,'left',{valign:'center'}));
+    for(let c=col0+1;c<col0+largG;c++)out+=celluleVideR(c,row,style(c,fDef,fond,null));
+    merges.push(refFusion(col0,row,col0+largG-1,row));
+    if(droite){
+      out+=celluleTexteR(col0+largG,row,droite,style(col0+largG,idFontR(reg,{gras:true,taille:tX_(0.95),couleur:coul}),fond,'right',{valign:'center'}));
+      for(let c=col0+largG+1;c<=fin;c++)out+=celluleVideR(c,row,style(c,fDef,fond,null));
+      merges.push(refFusion(col0+largG,row,fin,row));
+    }
     return out;
   }
-
-  if(spec.k==='banniere'){
-    const fond=spec.ton==='identA'?'2C5A38':(spec.ton==='identM'?'B05A0F':
-      (spec.ton==='requis'?'6B4A82':(spec.ton==='adefinir'?'B8860B':'8E2A1D')));
-    const fillB=idFillR(reg,fond);
-    const st=idXfR(reg,idFontR(reg,{gras:true,couleur:'FFFFFF',taille:14}),fillB,idBorderR(reg,{top:true,bottom:true,left:true}),'center');
-    out+=celluleTexteR(colStart,row,spec.texte,st);
-    const sm=idXfR(reg,fDefaut,fillB,idBorderR(reg,{top:true,bottom:true}),null);
-    for(let c=1;c<width-1;c++)out+=celluleVideR(colStart+c,row,sm);
-    out+=celluleVideR(colStart+width-1,row,idXfR(reg,fDefaut,fillB,idBorderR(reg,{top:true,bottom:true,right:true}),null));
-    mergesListe.push(refFusion(colStart,row,colStart+width-1,row));
-    return out;
-  }
-
-  if(spec.k==='produits'){
-    const large=(spec.liste.length===1);
-    const blocs=spec.liste.map(function(p){
-      return{texte:p.toUpperCase(),fond:(p==='Avocat'?'2C5A38':'B05A0F')};
-    });
-    let col=colStart;
-    blocs.forEach(function(bl,i){
-      const largeur=large?(width-1):4;
-      const st=idXfR(reg,idFontR(reg,{gras:true,couleur:'FFFFFF',taille:10}),idFillR(reg,bl.fond),
-        idBorderR(reg,{top:haut,bottom:bas,left:(i===0)}),'center');
-      out+=celluleTexteR(col,row,bl.texte,st);
-      const stVide=idXfR(reg,fDefaut,idFillR(reg,bl.fond),idBorderR(reg,{top:haut,bottom:bas}),null);
-      for(let c=1;c<largeur;c++)out+=celluleVideR(col+c,row,stVide);
-      mergesListe.push(refFusion(col,row,col+largeur-1,row));
-      col+=largeur;
-    });
-    for(;col<colStart+width-1;col++)out+=celluleVideR(col,row,idXfR(reg,fDefaut,fillId,bM,null));
-    out+=celluleVideR(colStart+width-1,row,idXfR(reg,fDefaut,fillId,bD,null));
-    return out;
-  }
-
   if(spec.k==='tqTete'||spec.k==='tqLigne'){
-    const entete=spec.k==='tqTete';
-    const police=idFontR(reg,{gras:entete,taille:9,couleur:entete?'63706A':'16211B'});
-    const bSous=idBorderR(reg,{top:haut,bottom:entete?true:bas,left:true});
-    const bSousM=idBorderR(reg,{top:haut,bottom:entete?true:bas});
-    const bSousD=idBorderR(reg,{top:haut,bottom:entete?true:bas,right:true});
-    out+=celluleTexteR(colStart,row,entete?'Calibre':spec.lib,idXfR(reg,police,fillId,bSous,'left'));
-    const policeAbs=idFontR(reg,{taille:9,couleur:'9AA39A'});
+    const tete=spec.k==='tqTete';
+    const fond=idFillR(reg,tete?'EDF0ED':(spec.zebre?'F6F8F6':null));
+    const t=tete?tX_(0.8):tX_(0.92);
+    const police=idFontR(reg,{gras:tete,taille:t,couleur:tete?'4A564D':'16211B'});
+    const opt={couleurBas:tete?'D5DBD6':null,bas:tete};
+    out+=celluleTexteR(col0,row,tete?'Calibre':spec.lib,style(col0,police,fond,'left',opt));
     QUALITES.forEach(function(q,i){
       let v='';
-      if(entete)v=(spec.qualites.indexOf(q)>=0)?q:'';
-      else v=(spec.cellules[q]!=null&&spec.cellules[q]!=='')?spec.cellules[q]:'';
-      const f=(!entete&&v===SIGNE_ABSENT)?policeAbs:police;
-      out+=celluleTexteR(colStart+1+i,row,v,idXfR(reg,f,fillId,bSousM,'center'));
+      if(tete)v=spec.qualites.indexOf(q)>=0?q:'';
+      else v=spec.cellules[q]!=null?spec.cellules[q]:'';
+      const f=(!tete&&v===SIGNE_ABSENT)?idFontR(reg,{taille:t,couleur:'AEB6AF'})
+        :((!tete&&v===SIGNE_PREVU)?idFontR(reg,{gras:true,taille:t,couleur:'A77A08'}):police);
+      out+=celluleTexteR(col0+1+i,row,v,style(col0+1+i,f,fond,'center',opt));
     });
-    out+=celluleTexteR(colStart+COL_TOT_X-1,row,entete?'Tot':String(spec.tot||''),
-      idXfR(reg,idFontR(reg,{gras:true,taille:9,couleur:entete?'63706A':'16211B'}),fillId,bSousM,'right'));
-    out+=celluleVideR(colStart+width-1,row,idXfR(reg,fDefaut,fillId,bSousD,null));
+    out+=celluleTexteR(fin,row,tete?'Tot':String(spec.tot||''),
+      style(fin,idFontR(reg,{gras:true,taille:t,couleur:tete?'4A564D':'16211B'}),fond,'right',opt));
     return out;
   }
-
-  const sTexte=idXfR(reg,idFontR(reg,{gras:spec.gras,italique:spec.italique,couleur:spec.couleur,
-    taille:spec.taille||(spec.gras?11:10)}),fillId,bG,spec.align||'left');
-  out+=celluleTexteR(colStart,row,spec.texte,sTexte);
-  for(let c=1;c<width-1;c++)out+=celluleVideR(colStart+c,row,idXfR(reg,fDefaut,fillId,bM,null));
-  out+=celluleVideR(colStart+width-1,row,idXfR(reg,fDefaut,fillId,bD,null));
-  mergesListe.push(refFusion(colStart,row,colStart+width-1,row));
+  if(spec.k==='blanc'||!spec.texte){
+    for(let c=col0;c<=fin;c++)out+=celluleVideR(c,row,style(c,fDef,fBlanc,null));
+    return out;
+  }
+  const fond=idFillR(reg,spec.fond||null);
+  const police=idFontR(reg,{gras:spec.gras,italique:spec.italique,couleur:spec.couleur,taille:spec.taille||tX});
+  const largT=spec.total?W-2:W;
+  out+=celluleTexteR(col0,row,spec.texte,style(col0,police,fond,spec.align||'left',{valign:'center'}));
+  for(let c=col0+1;c<col0+largT;c++)out+=celluleVideR(c,row,style(c,fDef,fond,null));
+  merges.push(refFusion(col0,row,col0+largT-1,row));
+  if(spec.total){
+    out+=celluleTexteR(col0+largT,row,spec.total,style(col0+largT,
+      idFontR(reg,{gras:true,taille:spec.taille||tX,couleur:spec.couleurTotal||spec.couleur}),fond,'right',{valign:'center'}));
+    out+=celluleVideR(fin,row,style(fin,fDef,fond,null));
+    merges.push(refFusion(col0+largT,row,fin,row));
+  }
   return out;
 }
-function construireFeuillePlan(reg){
-  const COLS=4,totalCols=CARD_W_X*COLS;
-  let cellsXml='',rowIdx=1;const merges=[];
-  const sTitre=idXfR(reg,idFontR(reg,{gras:true,taille:16}),0,0,'left');
-  cellsXml+='<row r="'+rowIdx+'">'+celluleTexteR(1,rowIdx,'Implantation des mûrisseries',sTitre)+'</row>';
-  merges.push(refFusion(1,rowIdx,totalCols,rowIdx));rowIdx++;
-  const sSous=idXfR(reg,idFontR(reg,{couleur:'555555',taille:11}),0,0,'left');
-  cellsXml+='<row r="'+rowIdx+'">'+celluleTexteR(1,rowIdx,jourLong(jourActif),sSous)+'</row>';
-  merges.push(refFusion(1,rowIdx,totalCols,rowIdx));rowIdx++;
-  const sLeg=idXfR(reg,idFontR(reg,{couleur:'63706A',taille:9}),0,0,'left');
-  cellsXml+='<row r="'+rowIdx+'">'+celluleTexteR(1,rowIdx,
-    'Dans les tableaux : '+SIGNE_PREVU+' quantité à confirmer   '+SIGNE_ABSENT+' qualité absente du calibre',sLeg)+'</row>';
-  merges.push(refFusion(1,rowIdx,totalCols,rowIdx));rowIdx++;
+function construireFeuillePlan(reg,aj){
+  tX=Math.min(20,Math.max(9,Math.round(aj.fs*1.3*2)/2));
+  const PAR_RANG=4,colCarte=function(i){return 1+i*(COLS_CARTE_X+1);};
+  const totalCols=PAR_RANG*(COLS_CARTE_X+1)-1;
+  let xmlL='',r=1;const merges=[];
+  const ligne=function(cells,ht){xmlL+='<row r="'+r+'"'+(ht?' ht="'+ht.toFixed(1)+'" customHeight="1"':'')+'>'+cells+'</row>';r++;};
+  const bilan=bilanJournee(jourActif);
+  const date=jourLong(jourActif);
+  ligne(celluleTexteR(1,r,'Implantation des mûrisseries',idXfR(reg,idFontR(reg,{gras:true,taille:20,couleur:'1C3D24'}),0,0,'left','center'))
+    +celluleTexteR(totalCols-12,r,(bilan.total+(bilan.inc>0?'+':''))+' palettes   ·   '+bilan.utilisees+' / '+CHAMBRES.length
+      +' chambres utilisées'+(bilan.horsService?'   ·   '+bilan.horsService+' hors service':''),
+      idXfR(reg,idFontR(reg,{gras:true,taille:12,couleur:'1C3D24'}),0,0,'right','center')),28);
+  merges.push(refFusion(1,r-1,totalCols-13,r-1),refFusion(totalCols-12,r-1,totalCols,r-1));
+  const sDate=idXfR(reg,idFontR(reg,{gras:true,taille:12,couleur:'4A564D'}),0,idBorderR(reg,{bottom:true,couleur:'1C3D24',epais:true}),'left','center');
+  let cDate=celluleTexteR(1,r,date.charAt(0).toUpperCase()+date.slice(1),sDate);
+  for(let c=2;c<=totalCols;c++)cDate+=celluleVideR(c,r,sDate);
+  ligne(cDate,20);merges.push(refFusion(1,r-1,totalCols,r-1));
+  const leg=[],carre=function(coul,lib){leg.push({texte:'■ ',couleur:coul,taille:12},{texte:lib+'      ',couleur:'3A463D',taille:9});};
+  carre(PALETTE_MODE.froid.m,'Froid');carre(PALETTE_MODE.affinage.m,'Affinage');carre(PALETTE_MODE.chauffe.m,'Chauffe (éthylène)');
+  carre(PALETTE_MODE.adefinir.m,'Conservation à définir');carre(PALETTE_MODE.requis.m,'Réquisitionnée');
+  carre(PALETTE_MODE.hs.m,'Hors service');carre(PALETTE_MODE.vide.b,'Vide');
+  leg.push({texte:SIGNE_PREVU+' ',gras:true,taille:9},{texte:'quantité à confirmer      ',taille:9,couleur:'3A463D'},
+           {texte:SIGNE_ABSENT+' ',gras:true,taille:9},{texte:'qualité absente du calibre',taille:9,couleur:'3A463D'});
+  ligne(celluleRicheR(1,r,leg,idXfR(reg,0,0,0,'left','center')),20);merges.push(refFusion(1,r-1,totalCols,r-1));
   if(journeeAutomatique(jourActif)){
-    const sAuto=idXfR(reg,idFontR(reg,{gras:true,couleur:'7A560E',taille:10}),idFillR(reg,'FFF3DC'),0,'left');
-    cellsXml+='<row r="'+rowIdx+'">'+celluleTexteR(1,rowIdx,texteReconduction(jourActif),sAuto)+'</row>';
-    merges.push(refFusion(1,rowIdx,totalCols,rowIdx));rowIdx++;
+    ligne(celluleTexteR(1,r,texteReconduction(jourActif),idXfR(reg,idFontR(reg,{gras:true,couleur:'6B4C0B',taille:10}),idFillR(reg,'FFF3DC'),0,'left','center')),18);
+    merges.push(refFusion(1,r-1,totalCols,r-1));
   }
-  rowIdx++;
-  [CHAMBRES.slice(0,4),CHAMBRES.slice(4,8)].forEach(function(groupe){
-    const parCarte=groupe.map(function(n){return lignesCarteExcel(n);});
-    const maxL=Math.max.apply(null,parCarte.map(function(l){return l.length;}));
-    parCarte.forEach(function(l){while(l.length<maxL)l.push({k:'texte',texte:''});});
+  ligne('',6);
+  for(let i=0;i<CHAMBRES.length;i+=PAR_RANG){
+    const rang=CHAMBRES.slice(i,i+PAR_RANG);
+    const parCarte=rang.map(lignesCarteExcel);
+    const maxL=Math.max.apply(null,parCarte.map(function(l){return l.length;}))+1;
+    parCarte.forEach(function(l){while(l.length<maxL)l.push({k:'blanc'});});
     for(let li=0;li<maxL;li++){
-      const estHaut=(li===0),estBas=(li===maxL-1);
-      let ligneXml='';
-      groupe.forEach(function(n,ci){
-        ligneXml+=emettreLigneCarte(reg,parCarte[ci][li],rowIdx,ci*CARD_W_X+1,CARD_W_X,estHaut,estBas,merges,fondCarte(n));
+      let cells='',ht=0;
+      rang.forEach(function(n,ci){
+        const spec=parCarte[ci][li];
+        ht=Math.max(ht,hauteurLigneX(spec));
+        cells+=emettreLigneCarte(reg,spec,r,colCarte(ci),li===0,li===maxL-1,paletteDe(n),!ficheDe(n),merges);
       });
-      cellsXml+='<row r="'+rowIdx+'">'+ligneXml+'</row>';rowIdx++;
+      ligne(cells,ht);
     }
-    rowIdx++;
-  });
+    if(i+PAR_RANG<CHAMBRES.length)ligne('',9);
+  }
   let cols='<cols>';
-  for(let c=0;c<COLS;c++){
-    const base=c*CARD_W_X;
-    cols+='<col min="'+(base+1)+'" max="'+(base+1)+'" width="15" customWidth="1"/>';
-    cols+='<col min="'+(base+2)+'" max="'+(base+7)+'" width="4.3" customWidth="1"/>';
-    cols+='<col min="'+(base+8)+'" max="'+(base+8)+'" width="6.5" customWidth="1"/>';
-    cols+='<col min="'+(base+9)+'" max="'+(base+9)+'" width="1.6" customWidth="1"/>';
+  for(let c=0;c<PAR_RANG;c++){
+    const b=colCarte(c);
+    cols+='<col min="'+b+'" max="'+b+'" width="14" customWidth="1"/>'
+      +'<col min="'+(b+1)+'" max="'+(b+6)+'" width="4.6" customWidth="1"/>'
+      +'<col min="'+(b+7)+'" max="'+(b+7)+'" width="7" customWidth="1"/>';
+    if(c<PAR_RANG-1)cols+='<col min="'+(b+8)+'" max="'+(b+8)+'" width="1.8" customWidth="1"/>';
   }
   cols+='</cols>';
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-    +'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+    +'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
     +'<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>'
-    +'<sheetViews><sheetView showGridLines="0" workbookViewId="0"/></sheetViews>'
-    +cols+'<sheetData>'+cellsXml+'</sheetData>'
-    +'<mergeCells count="'+merges.length+'">'+merges.map(function(r){return '<mergeCell ref="'+r+'"/>';}).join('')+'</mergeCells>'
-    +'<pageMargins left="0.3" right="0.3" top="0.4" bottom="0.4" header="0" footer="0"/>'
-    +'<pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0" paperSize="9"/>'
+    +'<sheetViews><sheetView showGridLines="0" workbookViewId="0" zoomScale="90" zoomScaleNormal="90"/></sheetViews>'
+    +'<sheetFormatPr defaultRowHeight="15"/>'
+    +cols+'<sheetData>'+xmlL+'</sheetData>'
+    +'<mergeCells count="'+merges.length+'">'+merges.map(function(m){return '<mergeCell ref="'+m+'"/>';}).join('')+'</mergeCells>'
+    +'<printOptions horizontalCentered="1"/>'
+    +'<pageMargins left="0.31" right="0.31" top="0.31" bottom="0.31" header="0" footer="0"/>'
+    +'<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="1"/>'
     +'</worksheet>';
 }
+/* feuilles « Données » et « Projection » : un vrai tableau, filtrable, dont
+   la ligne de titres reste visible en défilant */
 function feuilleSimple(reg,t,largeurs){
-  const sEntete=idXfR(reg,idFontR(reg,{gras:true}),0,0,null);
+  const bord=idBorderR(reg,{bottom:true,couleur:'E4E8E4'});
+  const sTete=idXfR(reg,idFontR(reg,{gras:true,taille:10,couleur:'FFFFFF'}),idFillR(reg,'1C3D24'),0,'left','center',true);
+  const sPair=idXfR(reg,idFontR(reg,{taille:10}),0,bord,'left','center');
+  const sImpair=idXfR(reg,idFontR(reg,{taille:10}),idFillR(reg,'F6F8F6'),bord,'left','center');
+  const nPair=idXfR(reg,idFontR(reg,{taille:10}),0,bord,'center','center');
+  const nImpair=idXfR(reg,idFontR(reg,{taille:10}),idFillR(reg,'F6F8F6'),bord,'center','center');
   const rows=t.map(function(r,i){
-    return '<row r="'+(i+1)+'">'+r.map(function(v,j){
-      const ref=colonneExcel(j)+(i+1),s=(i===0?' s="'+sEntete+'"':'');
+    return '<row r="'+(i+1)+'"'+(i===0?' ht="30" customHeight="1"':'')+'>'+r.map(function(v,j){
+      const ref=colonneExcel(j)+(i+1);
+      const s=i===0?sTete:(typeof v==='number'?(i%2?nPair:nImpair):(i%2?sPair:sImpair));
       return (typeof v==='number')
-        ?'<c r="'+ref+'"'+s+'><v>'+v+'</v></c>'
-        :'<c r="'+ref+'"'+s+' t="inlineStr"><is><t xml:space="preserve">'+xml(v)+'</t></is></c>';
+        ?'<c r="'+ref+'" s="'+s+'"><v>'+v+'</v></c>'
+        :'<c r="'+ref+'" s="'+s+'" t="inlineStr"><is><t xml:space="preserve">'+xml(v)+'</t></is></c>';
     }).join('')+'</row>';
   }).join('');
   const cols='<cols>'+largeurs.map(function(w,i){
     return '<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>';
   }).join('')+'</cols>';
+  const derniere=colonneExcel(largeurs.length-1)+t.length;
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     +'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-    +cols+'<sheetData>'+rows+'</sheetData></worksheet>';
+    +'<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>'
+    +'<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
+    +cols+'<sheetData>'+rows+'</sheetData>'
+    +'<autoFilter ref="A1:'+derniere+'"/>'
+    +'<pageMargins left="0.31" right="0.31" top="0.4" bottom="0.4" header="0.2" footer="0.2"/>'
+    +'<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>'
+    +'</worksheet>';
 }
 function construireFeuilleDonnees(reg){
-  return feuilleSimple(reg,lignesTableau(),[8,13,20,13,15,13,9,20,16,26,9,11,11,15,11,8,8,11,24]);
+  return feuilleSimple(reg,lignesTableau(),[9,13,20,13,15,13,9,22,16,28,9,11,11,15,11,8,8,10,26]);
 }
 function construireFeuilleProjection(reg){
-  return feuilleSimple(reg,lignesProjection(),[9,24,12,15,13,8]);
+  return feuilleSimple(reg,lignesProjection(),[10,26,12,16,14,9]);
 }
 function exportExcel(){
+  const aj=ajustementExport();
   modeExport=true;
-  try{ construireClasseurExcel(); } finally { modeExport=false; }
+  try{ construireClasseurExcel(aj); } finally { modeExport=false; }
 }
-function construireClasseurExcel(){
+function construireClasseurExcel(aj){
   const reg=nouveauRegistreStyles();
-  const feuillePlan=construireFeuillePlan(reg);
+  const feuillePlan=construireFeuillePlan(reg,aj);
   const feuilleDonnees=construireFeuilleDonnees(reg);
   const feuilleProj=construireFeuilleProjection(reg);
   const styles=construireStylesXlsx(reg);
@@ -4188,14 +4201,17 @@ function idFillR(reg,couleur){
   if(!couleur)return 0;
   return idDansRegistre(reg.fills,'c|'+couleur,{couleur:couleur});
 }
+/* un filet : côtés tracés, couleur, tirets (chambre vide), trait épais,
+   couleur propre au filet du bas (sous l'en-tête d'un tableau) */
 function idBorderR(reg,sides){
   sides=sides||{};
-  const cle='b|'+(sides.top?1:0)+(sides.bottom?1:0)+(sides.left?1:0)+(sides.right?1:0);
+  const cle='b|'+(sides.top?1:0)+(sides.bottom?1:0)+(sides.left?1:0)+(sides.right?1:0)
+    +'|'+(sides.couleur||'')+'|'+(sides.tirets?1:0)+'|'+(sides.epais?1:0)+'|'+(sides.couleurBas||'');
   return idDansRegistre(reg.borders,cle,sides);
 }
-function idXfR(reg,fontId,fillId,borderId,halign){
-  const cle='x|'+fontId+'|'+fillId+'|'+borderId+'|'+(halign||'');
-  return idDansRegistre(reg.xfs,cle,{fontId:fontId,fillId:fillId,borderId:borderId,halign:halign});
+function idXfR(reg,fontId,fillId,borderId,halign,valign){
+  const cle='x|'+fontId+'|'+fillId+'|'+borderId+'|'+(halign||'')+'|'+(valign||'');
+  return idDansRegistre(reg.xfs,cle,{fontId:fontId,fillId:fillId,borderId:borderId,halign:halign,valign:valign});
 }
 function nouveauRegistreStyles(){
   const reg={fonts:[],fills:[{cle:'none'},{cle:'gray125'}],borders:[],xfs:[]};
@@ -4232,12 +4248,19 @@ function construireStylesXlsx(reg){
     return '<fill><patternFill patternType="solid"><fgColor rgb="FF'+f.couleur+'"/><bgColor indexed="64"/></patternFill></fill>';
   }).join('');
   const borders=reg.borders.map(function(b){
-    const lado=function(nom,on){return on?'<'+nom+' style="thin"><color rgb="FF444444"/></'+nom+'>':'<'+nom+'/>';};
-    return '<border>'+lado('left',b.left)+lado('right',b.right)+lado('top',b.top)+lado('bottom',b.bottom)+'<diagonal/></border>';
+    const lado=function(nom,on,coul){
+      if(!on)return '<'+nom+'/>';
+      const st=b.epais?'medium':(b.tirets?'dashed':'thin');
+      return '<'+nom+' style="'+st+'"><color rgb="FF'+(coul||b.couleur||'444444')+'"/></'+nom+'>';
+    };
+    return '<border>'+lado('left',b.left)+lado('right',b.right)+lado('top',b.top)
+      +lado('bottom',b.bottom,b.couleurBas)+'<diagonal/></border>';
   }).join('');
   const xfs=reg.xfs.map(function(x){
+    const al=x.halign||x.valign;
     return '<xf numFmtId="0" fontId="'+x.fontId+'" fillId="'+x.fillId+'" borderId="'+x.borderId+'" xfId="0" applyFont="1" applyFill="1" applyBorder="1"'
-      +(x.halign?' applyAlignment="1"><alignment horizontal="'+x.halign+'" vertical="top" wrapText="1"/></xf>':'/>');
+      +(al?' applyAlignment="1"><alignment'+(x.halign?' horizontal="'+x.halign+'"':'')
+        +' vertical="'+(x.valign||'top')+'" wrapText="1"/></xf>':'/>');
   }).join('');
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     +'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
@@ -4249,191 +4272,254 @@ function construireStylesXlsx(reg){
     +'<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
 }
 
-function paragrapheWord(texte,opt){
-  opt=opt||{};
-  return '<w:p><w:pPr>'
-    +(opt.avant?'<w:spacing w:before="'+opt.avant+'"/>':'')
-    +(opt.bordure?'<w:pBdr><w:bottom w:val="single" w:sz="6" w:space="1" w:color="777777"/></w:pBdr>':'')
-    +'</w:pPr><w:r><w:rPr>'
-    +(opt.gras?'<w:b/>':'')
-    +(opt.taille?'<w:sz w:val="'+opt.taille+'"/>':'')
-    +(opt.couleur?'<w:color w:val="'+opt.couleur+'"/>':'')
-    +'</w:rPr><w:t xml:space="preserve">'+xml(texte)+'</w:t></w:r></w:p>';
-}
-/* ---- mise en page "carte" du Word : reproduit visuellement la grille de l'export PDF ---- */
-const PAGE_W_W=16838,PAGE_H_W=11906,MARGE_W=454; // A4 paysage, marges ~8mm (twips)
-const CARD_COLS_W=4;
-const CELL_MARGE_W=120;
-const COL_W_W=Math.floor((PAGE_W_W-2*MARGE_W)/CARD_COLS_W);
-const CELL_INNER_W=COL_W_W-2*CELL_MARGE_W;
+/* ================= EXPORT WORD =================
+   Même feuille que l'impression : A4 paysage, quatre chambres par rangée,
+   mêmes couleurs, même taille de texte (celle calculée pour le PDF, un peu
+   réduite car Word compose légèrement plus large qu'un navigateur). */
+/* teintes des modes, reprises de la feuille imprimée */
+const PALETTE_MODE={
+  froid:{m:'2F6F9F',t:'DDEAF5',b:'9DBFDA',mf:'1D4A6B'},
+  affinage:{m:'2E7A45',t:'DDEFE2',b:'A1CDAE',mf:'1C4F2B'},
+  chauffe:{m:'C0601A',t:'FBE5D2',b:'EDB88C',mf:'7F3D0C'},
+  adefinir:{m:'A77A08',t:'FAF0CF',b:'E2CA7B',mf:'6B4C0B'},
+  requis:{m:'6F4F9B',t:'ECE4F5',b:'BEA9D8',mf:'4A3170'},
+  hs:{m:'A8362A',t:'F8E2DE',b:'DCA29A',mf:'6E1F16'},
+  vide:{m:'AEB6AF',t:'F6F7F6',b:'C9D0CA',mf:'6B756D'}
+};
+const COUL_BANNIERE={identA:'2C5A38',identM:'B05A0F',etat:'A8362A',requis:'6F4F9B',adefinir:'A77A08'};
+const COUL_PROD={avocat:'2C5A38',mangue:'B05A0F',neutre:'77837A'};
+function paletteDe(n){return PALETTE_MODE[classeCarteFeuille(n).slice(2)];}
+
+const PAGE_W_W=16838,PAGE_H_W=11906,MARGE_W=454;     /* A4 paysage, marges 8 mm (twips) */
+const TW_MM=56.7;
+const ECART_W=136;                                   /* 2,4 mm entre deux chambres */
+const LARG_UTILE_W=PAGE_W_W-2*MARGE_W;
+const CARTE_W=Math.floor((LARG_UTILE_W-3*ECART_W)/4);
+const PAD_W=100;                                     /* marge intérieure des cartes */
+
+/* taille en demi-points, à partir d'un facteur de la taille de base */
+var fsWord=16;
+function tw(k){return Math.max(8,Math.round(fsWord*k));}
 function runW(texte,opt){
   opt=opt||{};
-  return '<w:r><w:rPr>'
+  return '<w:r><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/>'
     +(opt.gras?'<w:b/>':'')
     +(opt.italique?'<w:i/>':'')
-    +(opt.taille?'<w:sz w:val="'+opt.taille+'"/>':'')
+    +(opt.caps?'<w:caps/>':'')
     +(opt.couleur?'<w:color w:val="'+opt.couleur+'"/>':'')
+    +(opt.espace?'<w:spacing w:val="'+opt.espace+'"/>':'')
+    +'<w:sz w:val="'+(opt.taille||tw(1))+'"/><w:szCs w:val="'+(opt.taille||tw(1))+'"/>'
+    +(opt.fond?'<w:shd w:val="clear" w:color="auto" w:fill="'+opt.fond+'"/>':'')
     +'</w:rPr><w:t xml:space="preserve">'+xml(texte)+'</w:t></w:r>';
 }
-function paraW(runsXml,opt){
+function tabW(){return '<w:r><w:tab/></w:r>';}
+/* ordre imposé par le schéma OOXML : keepNext, pBdr, shd, tabs, spacing, ind, jc */
+function paraW(runs,opt){
   opt=opt||{};
-  /* ordre imposé par le schéma OOXML : pBdr, shd, tabs, spacing, jc */
   let pPr='<w:pPr>';
-  if(opt.bordure)pPr+='<w:pBdr><w:bottom w:val="single" w:sz="8" w:space="2" w:color="000000"/></w:pBdr>';
+  if(opt.bordures)pPr+='<w:pBdr>'+opt.bordures+'</w:pBdr>';
   if(opt.fond)pPr+='<w:shd w:val="clear" w:color="auto" w:fill="'+opt.fond+'"/>';
-  if(opt.tabs)pPr+='<w:tabs>'+opt.tabs+'</w:tabs>';
-  pPr+='<w:spacing w:before="'+(opt.avant||0)+'" w:after="'+(opt.apres!=null?opt.apres:20)+'" w:line="240" w:lineRule="auto"/>';
+  if(opt.tabDroite)pPr+='<w:tabs><w:tab w:val="right" w:pos="'+opt.tabDroite+'"/></w:tabs>';
+  pPr+='<w:spacing w:before="'+(opt.avant||0)+'" w:after="'+(opt.apres!=null?opt.apres:Math.round(fsWord*1.6))+'"'
+    +(opt.ligneExacte?' w:line="'+opt.ligneExacte+'" w:lineRule="exact"':' w:line="240" w:lineRule="auto"')+'/>';
+  if(opt.retrait)pPr+='<w:ind w:left="'+opt.retrait+'" w:right="'+opt.retrait+'"/>';
   if(opt.align)pPr+='<w:jc w:val="'+opt.align+'"/>';
   pPr+='</w:pPr>';
-  return '<w:p>'+pPr+runsXml+'</w:p>';
+  return '<w:p>'+pPr+runs+'</w:p>';
 }
-function paraCarte(texte,opt){return paraW(runW(texte,opt),opt);}
-function ligneTotal(label,total,couleurLabel,tailleLabel,tailleTotal,opt){
-  opt=opt||{};
-  const runs=runW(label,{gras:true,taille:tailleLabel,couleur:couleurLabel})
-    +'<w:r><w:tab/></w:r>'+runW(total,{taille:tailleTotal,couleur:couleurLabel});
-  return paraW(runs,Object.assign({tabs:'<w:tab w:val="right" w:pos="'+CELL_INNER_W+'"/>'},opt));
+function bordW(cote,coul,taille,espace){
+  return '<w:'+cote+' w:val="single" w:sz="'+(taille||6)+'" w:space="'+(espace||1)+'" w:color="'+coul+'"/>';
 }
-function celluleWrap(corps,fond){
-  return '<w:tc><w:tcPr><w:tcW w:w="'+COL_W_W+'" w:type="dxa"/>'
-    +(fond?'<w:shd w:val="clear" w:color="auto" w:fill="'+fond+'"/>':'')
-    +'<w:tcMar><w:top w:w="'+CELL_MARGE_W+'" w:type="dxa"/><w:left w:w="'+CELL_MARGE_W+'" w:type="dxa"/>'
-    +'<w:bottom w:w="'+CELL_MARGE_W+'" w:type="dxa"/><w:right w:w="'+CELL_MARGE_W+'" w:type="dxa"/></w:tcMar>'
-    +'<w:vAlign w:val="top"/></w:tcPr>'+corps+'</w:tc>';
-}
+const LARG_TEXTE_W=CARTE_W-2*PAD_W;
 
-/* ---- carte chambre en Word : mêmes blocs que l'écran ---- */
-function enteteCarte(n,total){
-  let runs=runW('MÛRISSERIE ',{taille:12,couleur:'63706A',gras:true})
-    +runW(String(n),{taille:26,couleur:'16211B',gras:true});
-  let tabs='';
-  if(total){
-    runs+='<w:r><w:tab/></w:r>'+runW(total,{taille:15,couleur:'555555'});
-    tabs='<w:tab w:val="right" w:pos="'+CELL_INNER_W+'"/>';
-  }
-  return paraW(runs,{tabs:tabs,bordure:true,apres:60});
-}
-function banniereWord(texte,ton){
-  const fond=ton==='identA'?'2C5A38':(ton==='identM'?'B05A0F':
-    (ton==='requis'?'6B4A82':(ton==='adefinir'?'B8860B':'8E2A1D')));
-  return paraW(runW(texte,{gras:true,taille:20,couleur:'FFFFFF'}),
-    {fond:fond,avant:60,apres:60,align:'center'});
-}
-function celluleTq(largeur,texte,opt){
-  opt=opt||{};
-  return '<w:tc><w:tcPr><w:tcW w:w="'+largeur+'" w:type="dxa"/>'
-    +(opt.fusion?'<w:gridSpan w:val="'+opt.fusion+'"/>':'')
-    +(opt.fond?'<w:shd w:val="clear" w:color="auto" w:fill="'+opt.fond+'"/>':'')
-    +'<w:tcMar><w:top w:w="10" w:type="dxa"/><w:left w:w="40" w:type="dxa"/>'
-    +'<w:bottom w:w="10" w:type="dxa"/><w:right w:w="40" w:type="dxa"/></w:tcMar></w:tcPr>'
-    +paraW(runW(texte,{gras:opt.gras,taille:opt.taille||13,couleur:opt.couleur}),
-        {apres:0,align:opt.align})
-    +'</w:tc>';
-}
-function tableauCalibresWord(b){
+function tableauCalibresWordF(b){
   const nQ=b.qualites.length;
-  const wLib=Math.floor(CELL_INNER_W*0.34);
-  const wTot=Math.floor(CELL_INNER_W*0.16);
-  const wQ=Math.max(180,Math.floor((CELL_INNER_W-wLib-wTot)/Math.max(nQ,1)));
+  const wLib=Math.floor(LARG_TEXTE_W*0.34),wTot=Math.floor(LARG_TEXTE_W*0.16);
+  const wQ=Math.floor((LARG_TEXTE_W-wLib-wTot)/Math.max(nQ,1));
+  const cel=function(w,texte,o){
+    return '<w:tc><w:tcPr><w:tcW w:w="'+w+'" w:type="dxa"/>'
+      +(o.fond?'<w:shd w:val="clear" w:color="auto" w:fill="'+o.fond+'"/>':'')
+      +'<w:tcMar><w:top w:w="0" w:type="dxa"/><w:left w:w="50" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="50" w:type="dxa"/></w:tcMar>'
+      +'</w:tcPr>'+paraW(runW(texte,{gras:o.gras,taille:o.taille,couleur:o.couleur}),{apres:0,align:o.align})+'</w:tc>';
+  };
+  const th={gras:true,taille:tw(0.78),couleur:'4A564D',fond:'EDF0ED'};
+  let t='<w:tr><w:trPr><w:cantSplit/></w:trPr>'+cel(wLib,'Calibre',th);
+  b.qualites.forEach(function(q){t+=cel(wQ,q,Object.assign({align:'center'},th));});
+  t+=cel(wTot,'Tot',Object.assign({align:'right'},th))+'</w:tr>';
+  b.lignes.forEach(function(l,i){
+    const fond=(i%2)?'F6F8F6':null;
+    t+='<w:tr><w:trPr><w:cantSplit/></w:trPr>'+cel(wLib,l.lib,{taille:tw(0.92),fond:fond});
+    b.qualites.forEach(function(q){
+      const v=l.cellules[q]||'';
+      t+=cel(wQ,v,{taille:tw(0.92),align:'center',fond:fond,
+        couleur:v===SIGNE_ABSENT?'AEB6AF':(v===SIGNE_PREVU?'A77A08':null),gras:v===SIGNE_PREVU});
+    });
+    t+=cel(wTot,String(l.tot||''),{taille:tw(0.92),gras:true,align:'right',fond:fond})+'</w:tr>';
+  });
   let grille='<w:gridCol w:w="'+wLib+'"/>';
   b.qualites.forEach(function(){grille+='<w:gridCol w:w="'+wQ+'"/>';});
   grille+='<w:gridCol w:w="'+wTot+'"/>';
-  let entete='<w:tr><w:trPr><w:tblHeader/></w:trPr>'
-    +celluleTq(wLib,'Calibre',{gras:true,taille:12,couleur:'63706A',fond:'F2F4F2'});
-  b.qualites.forEach(function(q){
-    entete+=celluleTq(wQ,q,{gras:true,taille:12,couleur:'63706A',align:'center',fond:'F2F4F2'});
-  });
-  entete+=celluleTq(wTot,'Tot',{gras:true,taille:12,couleur:'63706A',align:'right',fond:'F2F4F2'})+'</w:tr>';
-  const corps=b.lignes.map(function(l){
-    let tr='<w:tr>'+celluleTq(wLib,l.lib,{taille:12});
-    b.qualites.forEach(function(q){
-      const v=l.cellules[q]||'';
-      tr+=celluleTq(wQ,v,{taille:12,align:'center',couleur:(v===SIGNE_ABSENT?'9AA39A':null)});
-    });
-    return tr+celluleTq(wTot,String(l.tot||''),{taille:12,gras:true,align:'right'})+'</w:tr>';
-  }).join('');
-  const bordures='<w:tblBorders>'
-    +'<w:top w:val="single" w:sz="4" w:color="C8CEC8"/><w:left w:val="none" w:sz="0" w:color="auto"/>'
-    +'<w:bottom w:val="single" w:sz="4" w:color="C8CEC8"/><w:right w:val="none" w:sz="0" w:color="auto"/>'
-    +'<w:insideH w:val="single" w:sz="2" w:color="DDE2DD"/><w:insideV w:val="none" w:sz="0" w:color="auto"/></w:tblBorders>';
-  return '<w:tbl><w:tblPr><w:tblW w:w="'+(wLib+wQ*nQ+wTot)+'" w:type="dxa"/>'+bordures
-    +'<w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>'+grille+'</w:tblGrid>'
-    +entete+corps+'</w:tbl><w:p><w:pPr><w:spacing w:after="0" w:line="120" w:lineRule="exact"/></w:pPr></w:p>';
+  return '<w:tbl><w:tblPr><w:tblW w:w="'+(wLib+wQ*nQ+wTot)+'" w:type="dxa"/><w:tblInd w:w="'+PAD_W+'" w:type="dxa"/>'
+    +'<w:tblBorders><w:top w:val="single" w:sz="4" w:color="D5DBD6"/><w:left w:val="single" w:sz="4" w:color="D5DBD6"/>'
+    +'<w:bottom w:val="single" w:sz="4" w:color="D5DBD6"/><w:right w:val="single" w:sz="4" w:color="D5DBD6"/>'
+    +'<w:insideH w:val="single" w:sz="2" w:color="E4E8E4"/><w:insideV w:val="nil"/></w:tblBorders>'
+    +'<w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr>'
+    +'<w:tblGrid>'+grille+'</w:tblGrid>'+t+'</w:tbl>'
+    +paraW('',{apres:0,ligneExacte:Math.max(20,Math.round(fsWord*2))});
 }
-function carteChambreWord(n){
-  let corps='';
+/* tête de carte : numéro, « MÛRISSERIE », pastilles des produits et total */
+function teteCarteWord(n){
+  const B=blocsChambre(n),p=paletteDe(n),vide=!ficheDe(n);
+  let total='',prod=[];
+  B.forEach(function(b){if(b.t==='entete')total=b.total;if(b.t==='produits')prod=b.liste;});
+  const coul=vide?p.mf:'FFFFFF';
+  let runs=runW(String(n)+'  ',{gras:true,taille:tw(1.9),couleur:coul})
+    +runW('MÛRISSERIE',{gras:true,taille:tw(0.68),couleur:coul,espace:Math.round(fsWord*0.9)});
+  let droite='';
+  prod.forEach(function(x){
+    droite+=runW(' '+x.toUpperCase()+' ',{gras:true,taille:tw(0.66),couleur:COUL_PROD[x.toLowerCase()],fond:'FFFFFF'})+runW(' ',{taille:tw(0.66)});
+  });
+  if(total)droite+=runW(' '+total+' ',{gras:true,taille:tw(1.02),couleur:'16211B',fond:'FFFFFF'});
+  if(droite)runs+=tabW()+droite;
+  return paraW(runs,{apres:0,tabDroite:CARTE_W-2*PAD_W,align:'left'});
+}
+function corpsCarteWord(n){
+  const p=paletteDe(n);
+  const opt={retrait:PAD_W};
+  let c='';
+  const para=function(runs,o){c+=paraW(runs,Object.assign({},opt,o||{}));};
   blocsChambre(n).forEach(function(b){
     switch(b.t){
-      case 'entete':corps+=enteteCarte(b.num,b.total);break;
-      case 'banniere':corps+=banniereWord(b.texte,b.ton);break;
-      case 'cons':corps+=paraCarte(b.texte,{gras:true,taille:15,
-        fond:TEINTE_MODE[b.ton]||'E2EDE4'});break;
-      case 'info':corps+=paraCarte(b.texte,{taille:14,couleur:'333333'});break;
-      case 'note-libre':corps+=paraCarte(b.texte,{gras:true,taille:14,couleur:'7A560E',fond:'FFF3DC'});break;
-      case 'prevision':corps+=paraCarte(b.texte,{gras:true,taille:13,couleur:'7A560E',fond:'FFF7E8',avant:60});break;
-      case 'origine':
-        corps+=paraCarte((b.nom?b.nom+' — ':'')+b.marques+(b.total?'   '+b.total:''),
-          {gras:!!b.nom,taille:12,couleur:b.nom?(b.ton==='avocat'?'2C5A38':'B05A0F'):'63706A',avant:30});
-        break;
-      case 'produits':{
-        let runs='';
-        b.liste.forEach(function(p,i){
-          const c=(p==='Avocat'?'2C5A38':'B05A0F');
-          runs+=(i?runW('   ',{taille:16}):'')+runW('■ '+p.toUpperCase(),{gras:true,taille:16,couleur:c});
-        });
-        corps+=paraW(runs,{avant:60,apres:40});
+      case 'banniere':
+        para(runW(b.texte,{gras:true,taille:tw(1.08),couleur:'FFFFFF'}),{fond:COUL_BANNIERE[b.ton]||'A8362A',align:'center'});break;
+      case 'cons':{
+        const d=decouperCons(b.texte);
+        para(runW(d.tete,{gras:true,taille:tw(1.1),couleur:p.mf})
+          +(d.suite?'<w:r><w:br/></w:r>'+runW(d.suite,{gras:true,taille:tw(0.86),couleur:p.mf}):''),
+          {fond:p.t,bordures:bordW('left',p.m,24,4)});
+        if(d.alerte)para(runW(d.alerte,{gras:true,taille:tw(0.9),couleur:'FFFFFF'}),{fond:'A8362A',align:'center'});
         break;}
+      case 'info':{
+        const i=b.texte.indexOf(' : ');
+        para(i>0&&i<16
+          ?runW(b.texte.slice(0,i)+' : ',{gras:true,taille:tw(0.95),couleur:'4A564D'})+runW(b.texte.slice(i+3),{taille:tw(0.95),couleur:'26322A'})
+          :runW(b.texte,{taille:tw(0.95),couleur:'26322A'}));
+        break;}
+      case 'note-libre':
+        para(runW(b.texte,{gras:true,taille:tw(1),couleur:'6B4C0B'}),{fond:'FFF6DF',bordures:bordW('left','EBCF8A',12,4)});break;
+      case 'prevision':
+        para(runW(b.texte,{gras:true,taille:tw(0.92),couleur:'6B4C0B'}),{fond:'FFFBF1'});break;
       case 'section':{
-        const produit=(b.ton==='avocat'||b.ton==='mangue');
-        const coul=(b.ton==='avocat'?'2C5A38':(b.ton==='mangue'?'B05A0F':'444444'));
-        const titre=(produit?'■ ':'')+b.texte;
-        corps+=b.total?ligneTotal(titre,b.total,coul,14,13,{avant:60})
-                      :paraCarte(titre,{gras:true,taille:14,couleur:coul,avant:60});
+        const coul=COUL_PROD[b.ton]||'77837A';
+        para(runW(' '+b.texte+' ',{gras:true,taille:tw(0.8),couleur:'FFFFFF',fond:coul,espace:Math.round(fsWord*0.6)})
+          +(b.total?tabW()+runW(b.total,{gras:true,taille:tw(0.92)}):''),
+          {avant:Math.round(fsWord*3),bordures:bordW('bottom',coul,8,1),tabDroite:LARG_TEXTE_W});
         break;}
       case 'sousTitre':
-        corps+=paraCarte(b.texte+(b.total?'   '+b.total:''),{gras:true,taille:14,avant:40});
-        if(b.extra)corps+=paraCarte(b.extra,{couleur:'63706A',taille:12});
+        para(runW(b.texte,{gras:true,taille:tw(1)})+(b.total?tabW()+runW(b.total,{gras:true,taille:tw(0.9),couleur:'4A564D'}):''),
+          {tabDroite:LARG_TEXTE_W});
         break;
-      case 'tableau':corps+=tableauCalibresWord(b);break;
-      case 'note-vide':corps+=paraW(runW(b.texte.toUpperCase(),
-        {gras:true,taille:20,couleur:'A9B3A8'}),{align:'center',avant:220,apres:220});break;
-      case 'note':corps+=paraCarte(b.texte,{italique:true,couleur:'999999',taille:13});break;
+      case 'origine':
+        para((b.nom?runW(b.nom.toUpperCase()+' ',{gras:true,taille:tw(0.86),couleur:COUL_PROD[b.ton]}):'')
+          +runW(b.marques,{taille:tw(0.86),couleur:'4A564D'})
+          +(b.total?tabW()+runW(b.total,{taille:tw(0.86),couleur:'4A564D'}):''),{tabDroite:LARG_TEXTE_W});
+        break;
+      case 'tableau':c+=tableauCalibresWordF(b);break;
+      case 'note-vide':
+        para(runW((b.alt||b.texte).toUpperCase(),{gras:true,taille:tw(1.1),couleur:'9AA39B',espace:Math.round(fsWord*1.2)}),{align:'center'});break;
+      case 'note':para(runW(b.alt||b.texte,{italique:true,taille:tw(0.9),couleur:'6B756D'}));break;
     }
   });
-  return celluleWrap(corps,fondCarte(n));
+  return c||paraW('',{});
 }
-
-function tableauPlanWord(){
+function celluleCarteW(contenu,opt){
+  const b=opt.bordure,cotes=opt.cotes;
+  const bord=function(cote){return cotes.indexOf(cote)>=0
+    ?'<w:'+cote+' w:val="'+(opt.tirets?'dashed':'single')+'" w:sz="8" w:color="'+b+'"/>':'<w:'+cote+' w:val="nil"/>';};
+  return '<w:tc><w:tcPr><w:tcW w:w="'+CARTE_W+'" w:type="dxa"/>'
+    +'<w:tcBorders>'+bord('top')+bord('left')+bord('bottom')+bord('right')+'</w:tcBorders>'
+    +(opt.fond?'<w:shd w:val="clear" w:color="auto" w:fill="'+opt.fond+'"/>':'')
+    +'<w:tcMar><w:top w:w="'+(opt.haut||60)+'" w:type="dxa"/><w:left w:w="'+(opt.gauche!=null?opt.gauche:PAD_W)+'" w:type="dxa"/>'
+    +'<w:bottom w:w="'+(opt.bas||60)+'" w:type="dxa"/><w:right w:w="'+(opt.gauche!=null?opt.gauche:PAD_W)+'" w:type="dxa"/></w:tcMar>'
+    +'<w:vAlign w:val="'+(opt.valign||'top')+'"/></w:tcPr>'+contenu+'</w:tc>';
+}
+function celluleEcartW(){
+  return '<w:tc><w:tcPr><w:tcW w:w="'+ECART_W+'" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/>'
+    +'<w:bottom w:val="nil"/><w:right w:val="nil"/></w:tcBorders></w:tcPr>'+paraW('',{apres:0,ligneExacte:20})+'</w:tc>';
+}
+/* Les chambres forment un seul tableau : une ligne pour les têtes, une pour
+   les corps, par rangée. Deux chambres d'une rangée partagent ainsi la même
+   hauteur, comme sur la feuille imprimée. */
+function planWord(hauteursTw){
   let grille='';
-  for(let i=0;i<CARD_COLS_W;i++)grille+='<w:gridCol w:w="'+COL_W_W+'"/>';
+  for(let i=0;i<4;i++)grille+=(i?'<w:gridCol w:w="'+ECART_W+'"/>':'')+'<w:gridCol w:w="'+CARTE_W+'"/>';
   let lignes='';
-  for(let i=0;i<CHAMBRES.length;i+=CARD_COLS_W){
-    let ligne='<w:tr>';
-    for(let j=i;j<i+CARD_COLS_W&&j<CHAMBRES.length;j++)ligne+=carteChambreWord(CHAMBRES[j]);
-    lignes+=ligne+'</w:tr>';
+  for(let r=0;r*4<CHAMBRES.length;r++){
+    const rang=CHAMBRES.slice(r*4,r*4+4);
+    if(r>0)lignes+='<w:tr><w:trPr><w:trHeight w:val="'+ECART_W+'" w:hRule="exact"/></w:trPr>'
+      +rang.map(function(n,i){return (i?celluleEcartW():'')+'<w:tc><w:tcPr><w:tcW w:w="'+CARTE_W+'" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/></w:tcBorders></w:tcPr>'+paraW('',{apres:0,ligneExacte:20})+'</w:tc>';}).join('')+'</w:tr>';
+    lignes+='<w:tr><w:trPr><w:cantSplit/></w:trPr>'+rang.map(function(n,i){
+      const p=paletteDe(n),vide=!ficheDe(n);
+      return (i?celluleEcartW():'')+celluleCarteW(teteCarteWord(n),
+        {bordure:p.b,cotes:['top','left','right'],fond:vide?p.t:p.m,tirets:vide,haut:50,bas:50});
+    }).join('')+'</w:tr>';
+    lignes+='<w:tr><w:trPr><w:cantSplit/><w:trHeight w:val="'+hauteursTw[r]+'" w:hRule="atLeast"/></w:trPr>'
+      +rang.map(function(n,i){
+        const p=paletteDe(n),vide=!ficheDe(n);
+        return (i?celluleEcartW():'')+celluleCarteW(corpsCarteWord(n),
+          {bordure:p.b,cotes:['left','bottom','right'],tirets:vide,gauche:0,haut:80,bas:60,valign:vide?'center':'top'});
+      }).join('')+'</w:tr>';
   }
-  const bordures='<w:tblBorders>'
-    +'<w:top w:val="single" w:sz="6" w:color="444444"/><w:left w:val="single" w:sz="6" w:color="444444"/>'
-    +'<w:bottom w:val="single" w:sz="6" w:color="444444"/><w:right w:val="single" w:sz="6" w:color="444444"/>'
-    +'<w:insideH w:val="single" w:sz="6" w:color="444444"/><w:insideV w:val="single" w:sz="6" w:color="444444"/></w:tblBorders>';
-  return '<w:tbl><w:tblPr><w:tblW w:w="'+(COL_W_W*CARD_COLS_W)+'" w:type="dxa"/>'+bordures
-    +'<w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>'+grille+'</w:tblGrid>'+lignes+'</w:tbl>';
+  return '<w:tbl><w:tblPr><w:tblW w:w="'+LARG_UTILE_W+'" w:type="dxa"/><w:tblLayout w:type="fixed"/>'
+    +'<w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr>'
+    +'<w:tblGrid>'+grille+'</w:tblGrid>'+lignes+'</w:tbl>';
+}
+function enteteWord(){
+  const b=bilanJournee(jourActif);
+  const date=jourLong(jourActif);
+  const chiffres=(b.total+(b.inc>0?'+':''))+' palettes   ·   '+b.utilisees+' / '+CHAMBRES.length+' chambres utilisées'
+    +(b.horsService?'   ·   '+b.horsService+' hors service':'');
+  let h=paraW(runW('Implantation des mûrisseries',{gras:true,taille:32,couleur:'1C3D24'})
+      +tabW()+runW(chiffres,{gras:true,taille:20,couleur:'1C3D24'}),
+    {apres:0,ligneExacte:420,tabDroite:LARG_UTILE_W});
+  h+=paraW(runW(date.charAt(0).toUpperCase()+date.slice(1),{gras:true,taille:21,couleur:'4A564D'}),
+    {apres:80,ligneExacte:300,bordures:bordW('bottom','1C3D24',18,4)});
+  const leg=function(coul,lib){return runW('■ ',{taille:18,couleur:coul})+runW(lib+'     ',{taille:15,couleur:'3A463D'});};
+  h+=paraW(leg(PALETTE_MODE.froid.m,'Froid')+leg(PALETTE_MODE.affinage.m,'Affinage')+leg(PALETTE_MODE.chauffe.m,'Chauffe (éthylène)')
+    +leg(PALETTE_MODE.adefinir.m,'Conservation à définir')+leg(PALETTE_MODE.requis.m,'Réquisitionnée')
+    +leg(PALETTE_MODE.hs.m,'Hors service')+leg(PALETTE_MODE.vide.b,'Vide')
+    +runW('   '+SIGNE_PREVU+' ',{gras:true,taille:15})+runW('quantité à confirmer     ',{taille:15,couleur:'3A463D'})
+    +runW(SIGNE_ABSENT+' ',{gras:true,taille:15})+runW('qualité absente du calibre',{taille:15,couleur:'3A463D'}),
+    {avant:40,apres:100,ligneExacte:260});
+  let hauteur=420+300+80+40+100+260+80;
+  if(journeeAutomatique(jourActif)){
+    h+=paraW(runW(texteReconduction(jourActif),{gras:true,taille:16,couleur:'6B4C0B'}),
+      {fond:'FFF3DC',apres:100,ligneExacte:260});
+    hauteur+=360;
+  }
+  return{xml:h,hauteur:hauteur};
 }
 function exportWord(){
+  const aj=ajustementExport();
   modeExport=true;
-  try{ construireDocumentWord(); } finally { modeExport=false; }
+  try{ construireDocumentWord(aj); } finally { modeExport=false; }
 }
-function construireDocumentWord(){
-  let p=paragrapheWord('Implantation des mûrisseries',{gras:true,taille:24});
-  p+=paragrapheWord(jourLong(jourActif),{taille:17,couleur:'555555'});
-  p+=paragrapheWord('Dans les tableaux : '+SIGNE_PREVU+' quantité à confirmer   '
-    +SIGNE_ABSENT+' qualité absente du calibre',{taille:14,couleur:'63706A'});
-  if(journeeAutomatique(jourActif))
-    p+=paragrapheWord(texteReconduction(jourActif),{gras:true,taille:15,couleur:'7A560E',fond:'FFF3DC'});
-  p+=tableauPlanWord();
-  p+='<w:p/>';
+function construireDocumentWord(aj){
+  /* Word compose un peu plus large que le navigateur : 5 % de marge */
+  fsWord=Math.max(8,Math.round(aj.fs*2*0.95));
+  const tete=enteteWord();
+  const nbR=Math.ceil(CHAMBRES.length/4);
+  /* place laissée aux corps de cartes : la page moins l'en-tête, les têtes de
+     cartes, les intervalles et une marge de sécurité */
+  const teteCarteTw=Math.round(fsWord*1.9*10*1.25)+100;
+  const dispo=(PAGE_H_W-2*MARGE_W)-tete.hauteur-nbR*teteCarteTw-(nbR-1)*ECART_W-200;
+  const lignes=aj.lignes&&aj.lignes.length===nbR?aj.lignes:[1,1];
+  const tot=lignes.reduce(function(a,b){return a+b;},0)||1;
+  const hauteurs=lignes.map(function(l){return Math.max(600,Math.floor(dispo*l/tot));});
+  const corps=tete.xml+planWord(hauteurs)
+    +'<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/></w:pPr></w:p>';
   const doc='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-    +'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+p
+    +'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+corps
     +'<w:sectPr><w:pgSz w:w="'+PAGE_W_W+'" w:h="'+PAGE_H_W+'" w:orient="landscape"/>'
     +'<w:pgMar w:top="'+MARGE_W+'" w:right="'+MARGE_W+'" w:bottom="'+MARGE_W+'" w:left="'+MARGE_W+'" w:header="0" w:footer="0" w:gutter="0"/>'
     +'</w:sectPr></w:body></w:document>';
@@ -4798,8 +4884,7 @@ function exporterJournee(iso,format){
   };
   window.addEventListener('afterprint',restaurer);
   window.addEventListener('focus',restaurer);
-  ajusterEchelleImpression();
-  window.print();
+  imprimerFeuille();
 }
 function supprimerJournee(iso){
   if(lectureSeule===true){toast('Compte en lecture seule : suppression impossible.');return;}
@@ -4824,96 +4909,221 @@ function supprimerJournee(iso){
 }
 
 /* =========================================================================
-   ÉCHELLE D'IMPRESSION
-   La feuille doit toujours tenir sur une page, mais une journée légère ne
-   devrait pas laisser la moitié du papier vide en texte minuscule. On mesure
-   donc la hauteur réelle du plan avant d'imprimer et on applique un facteur
-   d'agrandissement — au-dessus de 1 quand il reste de la place, en dessous
-   quand les chambres débordent.
-   La mesure se fait dans un bloc hors écran auquel on applique les mêmes
-   règles que l'impression, extraites de la feuille de style elle-même : rien
-   n'est dupliqué à la main, donc rien ne peut diverger.
+   FEUILLE IMPRIMÉE
+   Construite juste avant d'imprimer, dans #feuille (voir la feuille de style
+   « FEUILLE IMPRIMÉE »). On cherche ensuite la plus grande taille de texte
+   qui laisse les deux rangées de chambres tenir sur la page : moins il y a à
+   lire, plus c'est écrit gros. Le même calcul sert au Word et à l'Excel.
    ========================================================================= */
-var feuilleMesure=null;
+var COLS_FEUILLE=4;
+var FS_MIN=4.5, FS_MAX=15;                 /* bornes de la taille du texte, en points */
+var dernierAjustement=null;
+var titreAvantImpression=null;                /* {fs, lignes:[mm], dispo:mm} du dernier calcul */
 var PX_PAR_MM=96/25.4;
 
-/* Recopie les règles des blocs @media print en les restreignant au bloc de
-   mesure. Les règles de zoom sont écartées : elles fausseraient la mesure. */
-function reglesImpression(){
-  const paysage=[],portrait=[];
-  const prefixer=function(sel){
-    return sel.split(',').map(function(s){
-      s=s.trim();
-      return (s==='body'||s==='html'||s===':root')?'#mesure':'#mesure '+s;
-    }).join(',');
-  };
-  const lire=function(regles,cible){
-    for(let i=0;i<regles.length;i++){
-      const r=regles[i];
-      if(r.selectorText&&r.style){
-        const t=r.style.cssText;
-        if(t.indexOf('zoom')>=0)continue;
-        cible.push(prefixer(r.selectorText)+'{'+t+'}');
-      }else if(r.cssRules)lire(r.cssRules,cible);
-    }
-  };
-  for(let i=0;i<document.styleSheets.length;i++){
-    let regles;
-    try{regles=document.styleSheets[i].cssRules;}catch(e){continue;}
-    for(let j=0;j<regles.length;j++){
-      const r=regles[j];
-      if(!r.media||!/print/.test(r.media.mediaText))continue;
-      lire(r.cssRules,/portrait/.test(r.media.mediaText)?portrait:paysage);
-    }
-  }
-  return{paysage:paysage.join('\n'),portrait:paysage.concat(portrait).join('\n')};
+function classeCarteFeuille(n){
+  const f=ficheDe(n);
+  if(!f)return 'm-vide';
+  normaliser(f);
+  const fam=ETATS[f.etat].famille;
+  if(fam==='hs')return 'm-hs';
+  if(fam==='requis')return 'm-requis';
+  return f.conservation.type?'m-'+f.conservation.type:'m-adefinir';
 }
-/* On mesure le bloc réellement zoomé, à la largeur réelle de la page : pas
-   d'hypothèse sur la façon dont le navigateur applique « zoom », c'est sa
-   propre mise en page qui répond. */
-function hauteurVisible(css,largeurMm,s){
-  const hote=document.getElementById('mesure');
-  feuilleMesure.textContent=css;
-  hote.style.width=(largeurMm*PX_PAR_MM)+'px';
-  const sec=hote.firstElementChild;
-  if(!sec)return 0;
-  sec.style.zoom=s;
-  const h=sec.getBoundingClientRect().height;
-  sec.style.zoom='';
+/* « Froid   5 °C   depuis …   gazage 20 min   ÉTHYLÈNE — NE PAS OUVRIR » :
+   l'essentiel en tête, le reste en dessous, l'alerte à part. */
+function decouperCons(texte){
+  const parts=String(texte).split(/\s{3,}/);
+  let alerte='';
+  const autres=[];
+  parts.forEach(function(p){if(/ÉTHYLÈNE/.test(p))alerte=p;else autres.push(p);});
+  return{tete:autres.slice(0,2).join(' · '),suite:autres.slice(2).join(' · '),alerte:alerte};
+}
+function tableauFeuille(b){
+  return '<table class="f-tq"><thead><tr><th class="lib">Calibre</th>'
+    +b.qualites.map(function(q){return '<th>'+q+'</th>';}).join('')
+    +'<th class="tot">Tot</th></tr></thead><tbody>'
+    +b.lignes.map(function(l){
+      return '<tr><td class="lib">'+esc(l.lib)+'</td>'
+        +b.qualites.map(function(q){
+          const v=l.cellules[q]||'';
+          const c=v===SIGNE_ABSENT?' class="abs"':(v===SIGNE_PREVU?' class="prev"':'');
+          return '<td'+c+'>'+esc(v)+'</td>';
+        }).join('')
+        +'<td class="tot">'+esc(l.tot)+'</td></tr>';
+    }).join('')+'</tbody></table>';
+}
+function carteFeuilleHTML(n){
+  const B=blocsChambre(n);
+  let tete='',corps='',produits=[];
+  B.forEach(function(b){if(b.t==='produits')produits=b.liste;});
+  B.forEach(function(b){
+    switch(b.t){
+      case 'entete':
+        tete='<div class="f-ct"><span class="f-no">'+b.num+'</span>'
+          +'<span class="f-mur">Mûrisserie</span>'
+          +'<span class="f-droite">'
+          +produits.map(function(p){return '<span class="f-pastille '+p.toLowerCase()+'">'+esc(p)+'</span>';}).join('')
+          +(b.total?'<span class="f-total">'+esc(b.total)+'</span>':'')
+          +'</span></div>';
+        break;
+      case 'banniere':corps+='<div class="f-ban '+b.ton+'">'+esc(b.texte)+'</div>';break;
+      case 'cons':{
+        const c=decouperCons(b.texte);
+        corps+='<div class="f-cons">'+esc(c.tete)+(c.suite?'<small>'+esc(c.suite)+'</small>':'')+'</div>';
+        if(c.alerte)corps+='<div class="f-alerte">'+esc(c.alerte)+'</div>';
+        break;}
+      case 'info':{
+        const i=b.texte.indexOf(' : ');
+        corps+='<div class="f-info">'+(i>0&&i<16
+          ?'<b>'+esc(b.texte.slice(0,i))+' :</b> '+esc(b.texte.slice(i+3))
+          :esc(b.texte))+'</div>';
+        break;}
+      case 'note-libre':corps+='<div class="f-note">'+esc(b.texte)+'</div>';break;
+      case 'prevision':corps+='<div class="f-prev">'+esc(b.texte)+'</div>';break;
+      case 'section':
+        corps+='<div class="f-prod '+b.ton+'"><span>'+esc(b.texte)+'</span>'
+          +(b.total?'<span class="q">'+esc(b.total)+'</span>':'')+'</div>';
+        break;
+      case 'sousTitre':
+        corps+='<div class="f-var"><span>'+esc(b.texte)+'</span>'
+          +(b.total?'<span class="q">'+esc(b.total)+'</span>':'')+'</div>';
+        break;
+      case 'origine':
+        corps+='<div class="f-orig '+b.ton+'"><span>'+(b.nom?'<b>'+esc(b.nom)+'</b>':'')+esc(b.marques)+'</span>'
+          +(b.total?'<span>'+esc(b.total)+'</span>':'')+'</div>';
+        break;
+      case 'tableau':corps+=tableauFeuille(b);break;
+      case 'note-vide':corps+='<div class="f-vide">'+esc(b.alt||b.texte)+'</div>';break;
+      case 'note':corps+='<div class="f-rien">'+esc(b.alt||b.texte)+'</div>';break;
+    }
+  });
+  return '<article class="f-carte '+classeCarteFeuille(n)+'">'+tete+'<div class="f-cb">'+corps+'</div></article>';
+}
+function legendeFeuille(){
+  const leg=function(cls,lib){return '<span class="f-leg '+cls+'"><i></i>'+lib+'</span>';};
+  return '<div class="f-legende">'
+    +'<span class="f-leg m-froid"><i></i>Froid</span>'
+    +'<span class="f-leg m-affinage"><i></i>Affinage</span>'
+    +'<span class="f-leg m-chauffe"><i></i>Chauffe (éthylène)</span>'
+    +leg('m-adefinir hachure','Conservation à définir')
+    +leg('m-requis','Réquisitionnée')
+    +leg('m-hs hachure','Hors service')
+    +leg('l-vide','Vide')
+    +'<span class="f-leg-sep"></span>'
+    +'<span class="f-leg"><b>'+SIGNE_PREVU+'</b> quantité à confirmer</span>'
+    +'<span class="f-leg"><b>'+SIGNE_ABSENT+'</b> qualité absente du calibre</span>'
+    +'</div>';
+}
+function chiffresFeuille(){
+  const b=bilanJournee(jourActif);
+  const occ=b.utilisees;
+  const pal=b.total+(b.inc>0?'+':'');
+  return '<div class="f-chiffres">'
+    +'<div class="f-chiffre"><b>'+esc(pal)+'</b><span>palettes</span></div>'
+    +'<div class="f-chiffre"><b>'+occ+' / '+CHAMBRES.length+'</b><span>chambres utilisées</span></div>'
+    +(b.horsService?'<div class="f-chiffre"><b>'+b.horsService+'</b><span>hors service</span></div>':'')
+    +'</div>';
+}
+function feuilleHTML(){
+  const d=new Date();
+  const edite='Édité le '+d.toLocaleDateString('fr-FR')+' à '
+    +String(d.getHours()).padStart(2,'0')+' h '+String(d.getMinutes()).padStart(2,'0');
+  return '<header class="f-tete"><div><div class="f-titre">Implantation des mûrisseries</div>'
+    +'<div class="f-date">'+esc(jourLong(jourActif))+'</div></div>'+chiffresFeuille()+'</header>'
+    +legendeFeuille()
+    +(journeeAutomatique(jourActif)?'<div class="f-auto">'+esc(texteReconduction(jourActif))+'</div>':'')
+    +'<div class="f-grille">'+CHAMBRES.map(carteFeuilleHTML).join('')+'</div>'
+    +'<footer class="f-pied"><span>Implantation des mûrisseries — '+esc(jourCourt(jourActif))+'</span>'
+    +'<span>'+esc(edite)+'</span></footer>';
+}
+/* Hauteur naturelle de chaque rangée pour une taille de texte donnée ; une
+   carte qui déborde en largeur (un tableau trop large) rend la taille
+   impossible. */
+function rangeesPour(g,cartes,fs){
+  g.style.setProperty('--fs',fs+'pt');
+  const h=[];
+  for(let i=0;i<cartes.length;i+=COLS_FEUILLE){
+    let m=0;
+    for(let j=i;j<i+COLS_FEUILLE&&j<cartes.length;j++){
+      const c=cartes[j],t=c.firstElementChild;
+      if(c.scrollWidth>c.clientWidth+1||(t&&t.scrollWidth>t.clientWidth+1))return null;
+      m=Math.max(m,c.getBoundingClientRect().height);
+    }
+    h.push(m);
+  }
   return h;
 }
-/* On cherche le plus grand facteur qui tienne encore dans la page. */
-function echellePour(css,largeurMm,hauteurMm){
-  const dispo=hauteurMm*PX_PAR_MM;
-  const visible=function(s){return hauteurVisible(css,largeurMm,s);};
-  const MIN=0.62,MAX=1.9;
-  if(visible(MIN)>dispo)return MIN;          /* même réduit au maximum, ça déborde */
-  if(visible(MAX)<=dispo)return MAX;
-  let bas=MIN,haut=MAX;
-  for(let i=0;i<7;i++){
-    const s=(bas+haut)/2;
-    if(visible(s)<=dispo)bas=s;else haut=s;
+function somme(t){return t.reduce(function(a,b){return a+b;},0);}
+/* Répartit la place restante : les rangées les plus courtes sont allongées
+   jusqu'à un même niveau, pour une page pleine et régulière. */
+function remplir(h,dispo){
+  const tri=h.slice().sort(function(a,b){return a-b;});
+  let niveau=dispo/h.length;
+  for(let k=tri.length;k>0;k--){
+    const grands=tri.slice(k),reste=dispo-somme(grands);
+    const L=reste/k;
+    if(L>=tri[k-1]){niveau=L;break;}
   }
-  return Math.floor(bas*100)/100;
+  return h.map(function(x){return Math.max(x,niveau);});
 }
-function ajusterEchelleImpression(){
-  try{
-    if(!window.CSS||!CSS.supports||!CSS.supports('zoom','2'))return;
-    const hote=document.getElementById('mesure');
-    const tete=document.querySelector('.colonne-plan .plan-tete');
-    if(!hote||!tete)return;
-    if(!feuilleMesure){feuilleMesure=document.createElement('style');document.head.appendChild(feuilleMesure);}
-    hote.innerHTML='<section class="panneau colonne-plan">'+tete.outerHTML
-      +'<div class="plan">'+CHAMBRES.map(chambreHTML).join('')+'</div></section>';
-    const r=reglesImpression();
-    /* marges de 8 mm sur les quatre côtés, plus 1 mm de sécurité en hauteur */
-    const ePay=echellePour(r.paysage,297-16,210-17);
-    const ePor=echellePour(r.portrait,210-16,297-17);
-    document.documentElement.style.setProperty('--ech-pay',ePay);
-    document.documentElement.style.setProperty('--ech-por',ePor);
-    hote.innerHTML='';
-    feuilleMesure.textContent='';
-  }catch(e){/* en cas d'échec, l'impression garde sa taille normale */}
+function ajusterFeuille(f){
+  const g=f.querySelector('.f-grille');
+  const cartes=Array.prototype.slice.call(g.children);
+  f.classList.remove('f-longue');
+  g.style.gridTemplateRows='';g.style.alignItems='start';
+  const nbR=Math.ceil(cartes.length/COLS_FEUILLE);
+  const ecart=parseFloat(getComputedStyle(g).rowGap)||0;
+  /* 1,5 mm de sécurité contre les arrondis de l'impression */
+  const dispo=g.getBoundingClientRect().height-ecart*(nbR-1)-1.5*PX_PAR_MM;
+  const tient=function(fs){const h=rangeesPour(g,cartes,fs);return h&&somme(h)<=dispo?h:null;};
+  let fs=FS_MIN;
+  if(tient(FS_MAX))fs=FS_MAX;
+  else{
+    let bas=FS_MIN,haut=FS_MAX;
+    for(let i=0;i<9;i++){const m=(bas+haut)/2;if(tient(m))bas=m;else haut=m;}
+    fs=Math.floor(bas*10)/10;
+  }
+  const h=rangeesPour(g,cartes,fs)||[];
+  const tientSurUnePage=h.length>0&&somme(h)<=dispo;
+  /* Même au plus petit, une journée hors norme déborde : plutôt qu'en couper
+     la fin, la feuille continue sur une deuxième page (et on le signale). */
+  f.classList.toggle('f-longue',!tientSurUnePage);
+  const finales=tientSurUnePage?remplir(h,dispo):h;
+  g.style.gridTemplateRows=tientSurUnePage?finales.map(function(x){return x.toFixed(2)+'px';}).join(' '):'';
+  g.style.alignItems='stretch';
+  dernierAjustement={fs:fs,lignes:finales.map(function(x){return x/PX_PAR_MM;}),dispo:dispo/PX_PAR_MM,
+    unePage:tientSurUnePage};
+  return dernierAjustement;
+}
+/* Prépare la feuille de la journée active. Jamais sous le verrou : on
+   n'imprime pas ce qu'on n'a pas le droit de voir. */
+function preparerFeuille(){
+  const f=document.getElementById('feuille');
+  if(!f)return null;
+  if(!deverrouille){f.innerHTML='';return null;}
+  const avant=modeExport;
+  modeExport=true;
+  try{f.innerHTML=feuilleHTML();}finally{modeExport=avant;}
+  /* le nom proposé pour le PDF enregistré est le titre de la page */
+  if(titreAvantImpression===null)titreAvantImpression=document.title;
+  document.title='Implantation_'+jourActif;
+  try{return ajusterFeuille(f);}catch(e){return null;}
+}
+/* Taille de texte retenue pour la journée active, sans rien laisser à
+   l'écran : sert au Word et à l'Excel. */
+function ajustementExport(){
+  const r=preparerFeuille();
+  const f=document.getElementById('feuille');
+  if(f)f.innerHTML='';
+  if(titreAvantImpression!==null){document.title=titreAvantImpression;titreAvantImpression=null;}
+  return r||{fs:8,lignes:[90,90],dispo:180};
+}
+function imprimerFeuille(){
+  const r=preparerFeuille();
+  if(!r){toast('Impossible de préparer la feuille à imprimer.');return;}
+  if(!r.unePage)toast('Journée très chargée : la feuille tient sur deux pages.');
+  window.print();
 }
 
 /* =========================================================================
@@ -7150,10 +7360,12 @@ document.querySelectorAll('.cons').forEach(function(c){
 document.getElementById('btnEnregistrer').addEventListener('click',enregistrer);
 document.getElementById('btnReprise').addEventListener('click',ouvrirReprise);
 document.getElementById('btnAnnuler').addEventListener('click',annulerModification);
-document.getElementById('btnPdf').addEventListener('click',function(){
-  ajusterEchelleImpression();window.print();
+document.getElementById('btnPdf').addEventListener('click',imprimerFeuille);
+/* Ctrl+P ou le menu du navigateur : la feuille se prépare aussi */
+window.addEventListener('beforeprint',preparerFeuille);
+window.addEventListener('afterprint',function(){
+  if(titreAvantImpression!==null){document.title=titreAvantImpression;titreAvantImpression=null;}
 });
-window.addEventListener('beforeprint',ajusterEchelleImpression);
 document.getElementById('btnExcel').addEventListener('click',exportExcel);
 document.getElementById('btnWord').addEventListener('click',exportWord);
 majActionsJournee();
