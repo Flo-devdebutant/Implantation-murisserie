@@ -903,7 +903,7 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
 
   /* ---------- résumé de la journée ---------- */
   .resume{margin-bottom:16px}
-  .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:10px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:10px}
   .stat{
     background:var(--surface);border:1px solid var(--bord);border-radius:12px;
     padding:11px 14px 10px;box-shadow:var(--ombre-1);display:flex;flex-direction:column;gap:2px;min-width:0;
@@ -1075,6 +1075,7 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
   /* ---------- historique et analyses ---------- */
   #vue-jours>h2,#vue-analyses>h2{display:none}
   #pane-histo>.panneau{padding:22px}
+  @media(max-width:600px){#pane-histo>.panneau{padding:14px}.jl-mois{flex-wrap:wrap;gap:2px 10px}}
   .jour-ligne{border-radius:12px;border-color:var(--bord);padding:14px 16px;box-shadow:var(--ombre-1);background:var(--surface)}
   .jour-ligne:hover{border-color:var(--bord-fort)}
   .jour-ligne.aujourdhui{border-left-width:4px;border-color:var(--marque);background:linear-gradient(180deg,var(--marque-teinte),#fff 70%)}
@@ -1215,6 +1216,276 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
   }
 }
 </style>
+<style>
+/* =========================================================================
+   INTERFACE (suite) : cartes de chambre, saisie, historique, analyses, équipe
+   Écran seulement, comme le bloc précédent. Les cartes de chambre ne sont
+   retouchées qu'à l'intérieur de #pane-jour : la feuille imprimée et le bloc
+   de mesure de l'impression n'en voient rien.
+   ========================================================================= */
+@media screen{
+  :root{
+    /* modes de conservation : teinte de carte et couleur pleine */
+    --m-froid:#3E7FB1;    --t-froid:#E3EEF6;
+    --m-affinage:#2F7D46; --t-affinage:#E2F0E6;
+    --m-chauffe:#C8651C;  --t-chauffe:#FBEBDD;
+    --m-adefinir:#B8860B; --t-adefinir:#FBF3D9;
+    --m-requis:#7A58A6;   --t-requis:#EFE8F6;
+    --m-hs:#B23B2E;       --t-hs:#FBE9E6;
+  }
+
+  /* ------------------------- cartes de chambre ------------------------- */
+  #pane-jour .chambre{
+    --m:#9CA3AF;--t:#F3F4F6;
+    padding:0;overflow:hidden;background:#fff;border:1px solid var(--bord);border-left:1px solid var(--bord);
+    border-radius:14px;box-shadow:var(--ombre-1);transition:box-shadow .15s,border-color .15s;
+  }
+  #pane-jour .chambre:hover{box-shadow:var(--ombre-2)}
+  #pane-jour .chambre.mode-froid{--m:var(--m-froid);--t:var(--t-froid)}
+  #pane-jour .chambre.mode-affinage{--m:var(--m-affinage);--t:var(--t-affinage)}
+  #pane-jour .chambre.mode-chauffe{--m:var(--m-chauffe);--t:var(--t-chauffe)}
+  #pane-jour .chambre.mode-adefinir{--m:var(--m-adefinir);--t:var(--t-adefinir)}
+  #pane-jour .chambre.requisitionnee{--m:var(--m-requis);--t:var(--t-requis)}
+  #pane-jour .chambre.hors-service{--m:var(--m-hs);--t:var(--t-hs)}
+  #pane-jour .chambre.mode-froid,#pane-jour .chambre.mode-affinage,#pane-jour .chambre.mode-chauffe,
+  #pane-jour .chambre.mode-adefinir,#pane-jour .chambre.requisitionnee,#pane-jour .chambre.hors-service{
+    background:#fff;border-color:color-mix(in srgb,var(--m) 28%,var(--bord));
+  }
+  /* bandeau de tête teinté par le mode ; hachures pour ce qui n'en est pas un */
+  #pane-jour .chambre-tete{
+    align-items:center;gap:10px;margin:0;padding:12px 14px;border-bottom:1px solid color-mix(in srgb,var(--m) 22%,var(--bord));
+    background:var(--t);
+  }
+  #pane-jour .chambre.mode-adefinir .chambre-tete{background:repeating-linear-gradient(135deg,#FBF3D9,#FBF3D9 7px,#F5E7B8 7px,#F5E7B8 14px)}
+  #pane-jour .chambre.hors-service .chambre-tete{background:repeating-linear-gradient(135deg,#FBE9E6,#FBE9E6 7px,#F4D3CD 7px,#F4D3CD 14px)}
+  #pane-jour .chambre.inoccupee .chambre-tete{background:#F9FAFB;border-bottom-style:dashed}
+  #pane-jour .chambre-tete .titre{display:none}
+  #pane-jour .chambre-num{
+    display:inline-grid;place-items:center;min-width:36px;height:36px;padding:0 6px;border-radius:10px;
+    background:var(--m);color:#fff;font-size:1.15rem;font-weight:750;letter-spacing:0;
+    box-shadow:inset 0 -2px 0 rgba(0,0,0,.15);
+  }
+  #pane-jour .chambre.inoccupee .chambre-num{background:#fff;color:var(--texte-3);border:1px dashed var(--bord-fort);box-shadow:none}
+  #pane-jour .chambre-tete .droite{margin-left:auto}
+  #pane-jour .tot-ch{font-size:.8rem;font-weight:700;color:var(--texte);background:#fff;border:1px solid var(--bord);
+    border-radius:999px;padding:3px 10px;font-family:inherit}
+  #pane-jour .chambre-tete .ico-btn{background:rgba(255,255,255,.85)}
+  /* corps */
+  #pane-jour .chambre>*:not(.chambre-tete){margin-left:14px;margin-right:14px}
+  #pane-jour .chambre>*:last-child{margin-bottom:14px}
+  #pane-jour .chambre-tete+*{margin-top:12px}
+  #pane-jour .cons-ligne{
+    border-radius:10px;padding:9px 12px;font-size:.88rem;font-weight:650;
+    background:var(--t);color:color-mix(in srgb,var(--m) 70%,#000);border:1px solid color-mix(in srgb,var(--m) 25%,transparent);
+  }
+  #pane-jour .bandeau-carte{border-radius:10px;font-size:.82rem;letter-spacing:.06em;padding:8px 10px}
+  #pane-jour .bandeau-carte.adefinir{background:var(--m-adefinir)}
+  #pane-jour .produits .badge{border-radius:999px;padding:3px 10px;font-size:.66rem}
+  #pane-jour .info-l{font-size:.84rem;color:var(--texte-2)}
+  #pane-jour .note-libre{border-radius:9px;background:#FFF8E6;border-color:#F0DCA6}
+  #pane-jour .prevision-l{border-radius:9px}
+  #pane-jour .pr-tete{margin-top:14px;padding-bottom:6px;border-bottom:1px solid var(--bord)}
+  #pane-jour .pr-nom{border-radius:999px;padding:3px 10px}
+  #pane-jour .var-t{margin-top:10px;font-size:.92rem}
+  #pane-jour .orig-l{margin-top:4px}
+  #pane-jour .tq{width:calc(100% - 28px);margin-top:8px;border:1px solid var(--bord);border-radius:10px;border-collapse:separate;border-spacing:0;overflow:hidden;font-size:.82rem}
+  #pane-jour .tq th{background:#F9FAFB;border-bottom:1px solid var(--bord);padding:6px 6px;color:var(--texte-3)}
+  #pane-jour .tq td{padding:6px 6px;border-bottom:1px solid #F1F3F5}
+  #pane-jour .tq td.lib{padding-left:10px}
+  #pane-jour .tq th.lib{padding-left:10px}
+  #pane-jour .tq td.tot,#pane-jour .tq th.tot{padding-right:10px}
+  #pane-jour .tq tbody tr:hover td{background:#FAFBFC}
+  #pane-jour .vide-grand{font-size:.86rem;font-weight:650;letter-spacing:.02em;text-transform:none;color:var(--texte-3);min-height:96px}
+  #pane-jour .chambre.inoccupee{border-style:dashed;background:#fff;box-shadow:none}
+
+  /* ------------------------- saisie d'une chambre ------------------------- */
+  .tuiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+  .choix-mode.tuiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .tuile-choix,.choix-mode .case{
+    position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    min-height:72px;padding:12px 10px;border-radius:13px;text-align:center;font-weight:650;
+    border:1.5px solid var(--bord-fort);background:#fff;box-shadow:var(--ombre-1);cursor:pointer;
+  }
+  .tuile-choix input,.choix-mode .case input{position:absolute;top:9px;right:9px;width:16px;height:16px;margin:0}
+  .tuile-choix .pastille,.choix-mode .case .point{width:14px;height:14px;border-radius:50%}
+  .tuile-choix:has(input:focus-visible),.choix-mode .case:has(input:focus-visible){box-shadow:var(--anneau)}
+  .case.produit.avocat:has(input:checked),.case.ident:has(input:checked):has(.pastille-avocat){border-color:var(--avocat);background:#E6F1E9;color:var(--avocat-fonce)}
+  .case.produit.mangue:has(input:checked),.case.ident:has(input:checked):has(.pastille-mangue){border-color:var(--mangue);background:#FBEBDD;color:#7A3A06}
+  .case.produit.mangue input,.case.ident:has(.pastille-mangue) input{accent-color:var(--mangue)}
+  .choix-mode .case.froid:has(input:checked){border-color:var(--m-froid);background:var(--t-froid);color:#1F4B6B}
+  .choix-mode .case.affinage:has(input:checked){border-color:var(--m-affinage);background:var(--t-affinage);color:#1B4A2A}
+  .choix-mode .case.chauffe:has(input:checked){border-color:var(--m-chauffe);background:var(--t-chauffe);color:#733A0E}
+  .choix-mode .point.froid{background:var(--m-froid)}
+  .choix-mode .point.affinage{background:var(--m-affinage)}
+  .choix-mode .point.chauffe{background:var(--m-chauffe)}
+  .sous-conservation{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0 12px;margin-top:16px;
+    padding:14px;border:1px solid var(--bord);border-radius:12px;background:var(--surface-2)}
+  .sous-conservation .champ:has(.cases){grid-column:1/-1}
+  .sous-conservation .aide{grid-column:1/-1}
+
+  /* variétés et origines */
+  .variete{padding:0;overflow:hidden;border:1px solid var(--bord);border-left:1px solid var(--bord);background:#fff}
+  .variete-tete{margin:0;padding:10px 14px;background:#EEF6F0;border-bottom:1px solid #D6E6DA}
+  .variete.mangue .variete-tete{background:#FDF1E6;border-bottom-color:#F1DCC6}
+  .variete-tete h3{font-size:.86rem;letter-spacing:.06em;color:var(--avocat-fonce)}
+  .variete.mangue .variete-tete h3{color:#7A3A06}
+  .variete-tete .compteur{font-weight:700;color:var(--texte)}
+  .variete>.champ,.variete>.avis,.variete>.bloc-origine{margin-left:14px;margin-right:14px}
+  .variete>.champ:first-of-type{margin-top:14px}
+  .variete>*:last-child{margin-bottom:14px}
+  .bloc-origine{background:var(--surface-2);border:1px solid var(--bord);border-radius:12px;padding:12px 14px}
+  .orig-tete{padding-bottom:10px;border-bottom:1px solid var(--bord)}
+  .orig-tete .orig-nom{font-size:.9rem;letter-spacing:.02em;text-transform:none}
+  .categorie-groupe{border-style:solid;border-color:var(--bord);background:#FFFCF8;border-radius:12px}
+  /* grille des qualités : une petite tuile par lettre */
+  .saisie-calibre{background:#fff;border:1.5px solid var(--marque);box-shadow:0 0 0 4px var(--marque-teinte)}
+  .variete.mangue .saisie-calibre{background:#fff;border-color:var(--mangue);box-shadow:0 0 0 4px #FBEBDD}
+  .saisie-tete{font-size:.8rem;letter-spacing:.04em}
+  .grille-q{gap:8px}
+  .q{border:1px solid var(--bord-fort);border-radius:10px;padding:6px;background:var(--surface-2);transition:border-color .12s,background .12s}
+  .q:has(.qOn:checked){border-color:var(--marque);background:var(--marque-teinte)}
+  .variete.mangue .q:has(.qOn:checked){border-color:var(--mangue);background:#FBEBDD}
+  .q-tete{font-size:.85rem;color:var(--texte)}
+  .q input.qte{min-height:40px;font-size:1rem;font-weight:650;background:#fff}
+  /* calibres saisis */
+  .liste-calibres{border-top:0;margin-top:12px;display:flex;flex-direction:column;gap:6px}
+  .liste-calibres .ligne{border:1px solid var(--bord);border-radius:10px;background:#fff;padding:8px 10px;gap:8px}
+  .liste-calibres .ligne .cal{background:var(--surface-2);border:1px solid var(--bord);border-radius:7px;padding:3px 8px;font-size:.8rem}
+  .liste-calibres .ligne .tot{font-size:.95rem;margin-left:auto}
+  .groupe-poids{padding:8px 2px 0}
+  .q-ligne>span{color:var(--texte-2)}
+  .q-ligne input{min-height:34px!important;width:52px;border-radius:8px}
+  /* projection : une frise d'étapes */
+  #champsProjection .liste-calibres .ligne{border-left:3px solid var(--marque)}
+
+  /* ------------------------- historique ------------------------- */
+  .jl-mois{display:flex;align-items:baseline;gap:12px;margin:22px 2px 10px}
+  .jl-mois:first-child{margin-top:4px}
+  .jl-mois h3{font-size:1rem;font-weight:720;text-transform:capitalize;letter-spacing:-.01em}
+  .jl-mois span{font-size:.8rem;color:var(--texte-3)}
+  .jl-groupe{display:flex;flex-direction:column;gap:8px}
+  .jour-ligne{
+    display:grid;grid-template-columns:52px minmax(0,1fr) auto;grid-template-areas:"date corps chiffre" "date actions actions";
+    gap:6px 14px;align-items:center;margin:0;padding:12px 14px;
+  }
+  @media(min-width:900px){
+    .jour-ligne{grid-template-columns:52px minmax(0,1fr) auto auto;grid-template-areas:"date corps chiffre actions"}
+  }
+  .jl-date{grid-area:date;align-self:start;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    width:52px;height:56px;border-radius:12px;background:var(--surface-2);border:1px solid var(--bord)}
+  .jl-date b{font-size:1.3rem;line-height:1;font-weight:760}
+  .jl-date span{font-size:.7rem;font-weight:650;color:var(--texte-3);text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+  .jour-ligne.aujourdhui .jl-date{background:var(--marque);border-color:var(--marque);color:#fff}
+  .jour-ligne.aujourdhui .jl-date span{color:rgba(255,255,255,.8)}
+  .jl-corps{grid-area:corps;min-width:0}
+  .jour-ligne .jour-tete{margin:0 0 6px;gap:8px}
+  .jour-ligne .jour-nom{font-size:.95rem}
+  .jl-chiffre{grid-area:chiffre;font-size:.86rem;font-weight:700;color:var(--texte);white-space:nowrap;
+    background:var(--surface-2);border:1px solid var(--bord);border-radius:999px;padding:4px 11px;font-family:inherit}
+  .jour-ligne .jour-detail{margin:6px 0 0;font-size:.8rem}
+  .jour-ligne .jour-actions{grid-area:actions;justify-content:flex-end}
+  .groupe-export{display:inline-flex;gap:0}
+  .groupe-export .bouton{border-radius:0;margin-left:-1px;box-shadow:none}
+  .groupe-export .bouton:first-child{border-radius:9px 0 0 9px;margin-left:0}
+  .groupe-export .bouton:last-child{border-radius:0 9px 9px 0}
+  .jour-ligne.non-renseignee{background:transparent;border-style:dashed;box-shadow:none}
+  .jour-ligne.non-renseignee .jl-date{background:transparent;border-style:dashed}
+  .jour-ligne.non-renseignee .jour-detail{color:var(--texte-3);font-style:italic;margin-top:0}
+  .jour-ligne.chome .jl-date span{color:#8A6212}
+  .jour-marque.chome{background:#EDE7D5;color:#6B5518}
+  .jour-marque.vide{background:#E5E7EB;color:var(--texte-2)}
+  .jl-bande{display:flex;gap:4px;flex-wrap:wrap}
+  .jl-case,.ve-case{
+    display:inline-grid;place-items:center;width:26px;height:22px;border-radius:6px;font-size:.7rem;font-weight:750;
+    color:#fff;background:var(--m,#E5E7EB);border:0;padding:0;font-family:inherit;
+  }
+  .jl-case.froid,.ve-case.froid{--m:var(--m-froid)}
+  .jl-case.affinage,.ve-case.affinage{--m:var(--m-affinage)}
+  .jl-case.chauffe,.ve-case.chauffe{--m:var(--m-chauffe)}
+  .jl-case.requis,.ve-case.requis{--m:var(--m-requis)}
+  .jl-case.hs,.ve-case.hs{--m:var(--m-hs)}
+  .jl-case.adefinir,.ve-case.adefinir{background:repeating-linear-gradient(135deg,#E3B53F,#E3B53F 4px,#C9981F 4px,#C9981F 8px);color:#3D2E00}
+  .jl-case.libre,.ve-case.libre{background:#EEF0F3;color:var(--texte-3)}
+  @media(max-width:560px){.groupe-export .bouton{padding:6px 9px}.jour-ligne .jour-actions{justify-content:flex-start}}
+
+  /* ------------------------- analyses ------------------------- */
+  .vue-ensemble{border:1px solid var(--bord);border-radius:14px;padding:14px 16px;margin-bottom:16px;background:#fff}
+  .ve-tete{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px;margin-bottom:10px}
+  .ve-tete h3{font-size:1rem;font-weight:720}
+  .legende-modes{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.78rem;color:var(--texte-2);margin:0}
+  .legende-modes .cle{display:inline-flex;align-items:center;gap:6px}
+  .legende-modes .ve-case{width:20px;height:18px;font-size:.62rem;cursor:default}
+  .ve-defile{overflow-x:auto;scrollbar-width:thin}
+  .ve-table{border-collapse:separate;border-spacing:3px;font-size:.72rem}
+  .ve-table th{font-weight:650;color:var(--texte-3);text-align:center;min-width:26px}
+  .ve-table thead th{font-size:.7rem;line-height:1.15;padding-bottom:2px}
+  .ve-table thead th span{display:block;font-size:.62rem;text-transform:uppercase;opacity:.75}
+  .ve-table thead th.chome{color:#8A6212}
+  .ve-table tbody th{text-align:left;padding-right:6px;color:var(--texte-2);position:sticky;left:0;background:#fff}
+  .ve-table td{padding:0}
+  .ve-table .ve-case{cursor:pointer;transition:transform .1s,box-shadow .1s}
+  .ve-table .ve-case:hover{transform:scale(1.12);box-shadow:0 0 0 2px #fff,0 0 0 3.5px var(--texte)}
+  .analyses-grille{display:grid;grid-template-columns:1fr;gap:12px}
+  .carte-analyse{padding:14px 16px 10px;background:#fff;box-shadow:var(--ombre-1);margin:0}
+  .analyse-tete{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .analyse-num{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--marque);
+    color:#fff;font-weight:750;font-size:1.05rem}
+  .analyse-titre{display:flex;flex-direction:column;min-width:0;flex:1}
+  .analyse-titre b{font-size:.95rem}
+  .analyse-titre small{font-size:.76rem;color:var(--texte-3)}
+  .analyse-chiffres{display:flex;gap:8px;flex-wrap:wrap}
+  .analyse-chiffres .chiffre{display:flex;flex-direction:column;align-items:flex-end;padding:4px 10px;border-radius:9px;
+    background:var(--surface-2);border:1px solid var(--bord)}
+  .analyse-chiffres b{font-size:.92rem;font-family:inherit}
+  .analyse-chiffres small{font-size:.68rem;color:var(--texte-3)}
+  .carte-analyse .analyse-lecture{display:block;min-height:1.5em;font-size:.8rem;color:var(--texte-2);margin:0 0 4px;
+    padding:5px 10px;border-radius:8px;background:var(--surface-2)}
+  #legendeAnalyses .legende{margin:0 0 12px}
+
+  /* ------------------------- équipe ------------------------- */
+  #pane-equipe>.panneau{max-width:980px}
+  .roles-grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:22px}
+  .role-carte{border:1px solid var(--bord);border-radius:12px;padding:12px 14px;background:var(--surface-2)}
+  .role-carte p{font-size:.8rem;color:var(--texte-2);margin-top:8px;line-height:1.45}
+  .role-badge{display:inline-flex;align-items:center;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:999px;
+    background:#E5E7EB;color:var(--texte-2);white-space:nowrap}
+  .role-badge.r-admin{background:#1C3D24;color:#fff}
+  .role-badge.r-responsable{background:#DCEFE1;color:#1F4A2B}
+  .role-badge.r-murisseur{background:#E3EEF6;color:#1F4B6B}
+  .role-badge.r-observateur{background:#EFE8F6;color:#553A69}
+  .equipe-titre{font-size:.98rem;font-weight:720;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+  .equipe-titre span{font-size:.75rem;font-weight:700;background:var(--surface-2);border:1px solid var(--bord);border-radius:999px;padding:1px 8px}
+  .membres{display:flex;flex-direction:column;border:1px solid var(--bord);border-radius:12px;overflow:hidden;margin-bottom:24px}
+  .membre{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:12px 14px;background:#fff}
+  .membre+.membre{border-top:1px solid var(--bord)}
+  .membre-nom{display:flex;flex-direction:column;min-width:0}
+  .membre-nom b{font-size:.93rem}
+  .membre-nom em{font-style:normal;font-weight:500;color:var(--texte-3)}
+  .membre-nom small{font-size:.76rem;color:var(--texte-3)}
+  .membre-nom .provisoire{color:#8A6212;font-weight:650}
+  .membre-role select{min-height:36px;padding:5px 32px 5px 10px;font-size:.85rem;border-radius:9px;width:auto}
+  .membre-actions{display:flex;gap:6px;align-items:center}
+  @media(max-width:700px){
+    .membre{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"av nom" "role role" "act act"}
+    .membre .avatar{grid-area:av}.membre-nom{grid-area:nom}.membre-role{grid-area:role}.membre-actions{grid-area:act}
+  }
+  .ajout-membre{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto;gap:10px;align-items:end}
+  .ajout-membre .champ{margin:0}
+  .ajout-membre .bouton{min-height:44px}
+  @media(max-width:600px){.ajout-membre{grid-template-columns:1fr}}
+  .ajout-membre+.aide{margin:12px 0 0}
+  @media(max-width:600px){
+    .jour-ligne{grid-template-columns:44px minmax(0,1fr);grid-template-areas:"date corps" "date chiffre" "actions actions";padding:12px}
+    .jl-date{width:44px;height:50px}
+    .jl-chiffre{justify-self:start}
+    .jour-ligne .jour-actions{justify-content:flex-start}
+  }
+  .mdp-provisoire{font:700 1.7rem/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.08em;text-align:center;
+    padding:14px 10px;margin:12px 0 10px;border-radius:12px;background:var(--surface-2);border:1px dashed var(--bord-fort);
+    user-select:all;-webkit-user-select:all;color:var(--texte)}
+  .cx-aide{font-size:.8rem;color:var(--texte-3);margin:-6px 0 12px}
+}
+</style>
 </head>
 <body>
 <!-- Icônes au trait, dessinées une fois et reprises partout par <use> :
@@ -1249,6 +1520,9 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
   <symbol id="i-retour" viewBox="0 0 24 24"><path d="M19.5 12h-15M10.5 6l-6 6 6 6"/></symbol>
   <symbol id="i-ouvrir" viewBox="0 0 24 24"><path d="M9 5.5 15.5 12 9 18.5"/></symbol>
   <symbol id="i-precedent" viewBox="0 0 24 24"><path d="M15 5.5 8.5 12 15 18.5"/></symbol>
+  <symbol id="i-equipe" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.8a3.5 3.5 0 0 1 0 6.4M18.5 14.2a6.5 6.5 0 0 1 3 5.8"/></symbol>
+  <symbol id="i-cle" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4.5"/><path d="M11.2 11.8 20 3M16.5 6.5l2.5 2.5M14 9l2 2"/></symbol>
+  <symbol id="i-copier" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V5.5a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/></symbol>
 </svg>
 <!-- ============ ÉCRAN DE CONNEXION ============
      Recouvre l'application sans la défaire : une saisie en cours attend
@@ -1288,6 +1562,7 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
     <button type="button" class="onglet" role="tab" data-onglet="jour" aria-selected="true"><svg class="ico" aria-hidden="true"><use href="#i-jour"/></svg><span class="lib">Aujourd'hui</span></button>
     <button type="button" class="onglet" role="tab" data-onglet="histo" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-histo"/></svg><span class="lib">Historique</span></button>
     <button type="button" class="onglet" role="tab" data-onglet="analyses" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-courbe"/></svg><span class="lib">Analyses</span></button>
+    <button type="button" class="onglet" role="tab" data-onglet="equipe" aria-selected="false" id="ongletEquipe" hidden><svg class="ico" aria-hidden="true"><use href="#i-equipe"/></svg><span class="lib">Équipe</span></button>
     <button type="button" class="onglet" role="tab" data-onglet="reglages" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-reglages"/></svg><span class="lib">Réglages</span></button>
   </nav>
   <div class="bl-pied">
@@ -1362,9 +1637,9 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
         <h2><span class="rang">2</span>Contenu de la chambre</h2>
         <div class="champ">
           <span class="etiquette">Identification pour la vente du lendemain</span>
-          <div class="cases">
-            <label class="case ident"><input type="checkbox" id="identAvocat"><span>Identification Avocat</span></label>
-            <label class="case ident"><input type="checkbox" id="identMangue"><span>Identification Mangue</span></label>
+          <div class="cases tuiles">
+            <label class="case ident tuile-choix"><input type="checkbox" id="identAvocat"><span class="pastille pastille-avocat" aria-hidden="true"></span><span>Identification avocat</span></label>
+            <label class="case ident tuile-choix"><input type="checkbox" id="identMangue"><span class="pastille pastille-mangue" aria-hidden="true"></span><span>Identification mangue</span></label>
           </div>
           <p class="aide" style="margin:8px 0 0">S'ajoute au contenu de la chambre : les palettes en froid restent affichées.</p>
         </div>
@@ -1374,9 +1649,9 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
         </label>
         <div class="champ">
           <span class="etiquette">Produits présents</span>
-          <div class="cases">
-            <label class="case"><input type="checkbox" id="pAvocat"><span>Avocat</span></label>
-            <label class="case"><input type="checkbox" id="pMangue"><span>Mangue</span></label>
+          <div class="cases tuiles">
+            <label class="case produit avocat tuile-choix"><input type="checkbox" id="pAvocat"><span class="pastille pastille-avocat" aria-hidden="true"></span><span>Avocat</span></label>
+            <label class="case produit mangue tuile-choix"><input type="checkbox" id="pMangue"><span class="pastille pastille-mangue" aria-hidden="true"></span><span>Mangue</span></label>
           </div>
         </div>
       </div>
@@ -1389,7 +1664,7 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
       <div class="etape" id="etapeConservation" hidden>
         <h2><span class="rang">4</span>Conservation</h2>
         <p class="aide">Une seule par chambre — cocher la nouvelle décoche la précédente.</p>
-        <div class="cases choix-mode">
+        <div class="cases choix-mode tuiles">
           <label class="case mode froid"><input type="checkbox" class="cons" value="froid"><span class="point froid" aria-hidden="true"></span><span>Froid</span></label>
           <label class="case mode affinage"><input type="checkbox" class="cons" value="affinage"><span class="point affinage" aria-hidden="true"></span><span>Affinage</span></label>
           <label class="case mode chauffe"><input type="checkbox" class="cons" value="chauffe"><span class="point chauffe" aria-hidden="true"></span><span>Chauffe</span></label>
@@ -1473,6 +1748,14 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
         <div id="legendeAnalyses"></div>
         <div id="analysesListe"></div>
       </div>
+    </section>
+  </div>
+
+  <div class="pane noprint" id="pane-equipe" hidden>
+    <section class="panneau">
+      <div class="equipe-roles" id="equipeRoles"></div>
+      <div id="equipeListe"></div>
+      <div id="equipeAjout"></div>
     </section>
   </div>
 
@@ -1709,15 +1992,15 @@ function ficheReconduite(source,isoCible,isoSource){
   f.projection=aVenir;
   return f;
 }
-/* Source d'une reconduction : le jour renseigné le plus proche qui précède.
-   C'est le samedi pour un dimanche, le vendredi pour un samedi férié, et le
-   dimanche déjà reconduit — projection comprise — pour un lundi férié. */
+/* Source d'une reconduction : la VEILLE, et elle seule. Un dimanche reprend le
+   samedi ; un lundi férié reprend le dimanche, lui-même reconduit. Si la veille
+   n'a pas été renseignée, le jour chômé reste vide : aller chercher plus loin
+   en arrière (l'ancienne règle remontait jusqu'à 14 jours) faisait reprendre
+   à un dimanche le contenu d'un mercredi vieux de dix jours, ce qui n'avait
+   aucun sens. */
 function sourceReconduction(isoCible){
-  for(let i=1;i<=14;i++){
-    const j=isoDecale(isoCible,-i);
-    if(journees[j]&&journees[j].length)return j;
-  }
-  return null;
+  const j=isoDecale(isoCible,-1);
+  return (journees[j]&&journees[j].length)?j:null;
 }
 function journeeAutomatique(iso){
   const l=journees[iso]||[];
@@ -1730,53 +2013,44 @@ function memeJournee(a,b){
     const c=JSON.parse(JSON.stringify(f));delete c.id;return c;}));};
   return sans(a)===sans(b);
 }
-/* Une journée chômée décrit ce que font les chambres toutes seules : si le
-   jour source est corrigé après coup, elle doit suivre. On ne touche qu'aux
-   fiches encore automatiques — celles reprises à la main restent intactes. */
-function rafraichirReconduits(){
-  let maj=0;
-  Object.keys(journees).sort().forEach(function(iso){
-    if(!estChome(iso))return;
-    const liste=journees[iso];
-    if(!liste||!liste.length)return;
-    if(!liste.some(function(f){return normaliser(f).auto;}))return;  /* tout est manuel */
-    const src=sourceReconduction(iso);
-    if(!src)return;
-    const manuelles=liste.filter(function(f){return !f.auto;});
-    const reprises={};manuelles.forEach(function(f){reprises[f.chambre]=true;});
-    const neuves=journees[src].filter(function(f){return !reprises[f.chambre];})
-      .map(function(f){return ficheReconduite(f,iso,src);});
-    const fusion=manuelles.concat(neuves).sort(function(a,b){return a.chambre-b.chambre;});
-    if(!memeJournee(liste,fusion)){journees[iso]=fusion;maj++;}
-  });
-  return maj;
-}
-function genererJoursChomes(){
-  const cles=Object.keys(journees).filter(function(k){return journees[k].length;}).sort();
+/* Recalcule tous les jours chômés, du premier jour renseigné jusqu'à
+   aujourd'hui, dans l'ordre : un lundi férié s'appuie ainsi sur le dimanche
+   recalculé juste avant. Un jour chômé est entièrement déterminé par sa
+   veille ; seules les fiches reprises à la main (non automatiques) sont
+   gardées telles quelles. Le calcul est donc toujours juste, même quand la
+   veille est complétée après coup, et il répare de lui-même les reconductions
+   faites autrefois depuis un jour trop ancien. */
+function recalculerReconduits(){
+  const cles=Object.keys(journees).filter(function(k){return journees[k]&&journees[k].length;}).sort();
   if(!cles.length)return 0;
   const fin=isoJour();
-  let cree=0;
-  /* on balaie du premier jour renseigné jusqu'à aujourd'hui, dans l'ordre :
-     un lundi férié peut ainsi s'appuyer sur le dimanche reconduit juste avant */
-  for(let iso=cles[0];iso<=fin;iso=isoDecale(iso,1)){
+  let maj=0;
+  for(let iso=isoDecale(cles[0],1);iso<=fin;iso=isoDecale(iso,1)){
     if(!estChome(iso))continue;
-    if(journees[iso]&&journees[iso].length)continue;  /* déjà des fiches */
-    if(reconduits.indexOf(iso)>=0)continue;           /* déjà reconduit une fois */
+    const liste=journees[iso]||[];
+    const manuelles=liste.filter(function(f){return !normaliser(f).auto;});
+    const reprises={};manuelles.forEach(function(f){reprises[f.chambre]=true;});
     const src=sourceReconduction(iso);
-    if(!src)continue;
-    journees[iso]=journees[src].map(function(f){return ficheReconduite(f,iso,src);});
-    reconduits.push(iso);
-    cree++;
+    const neuves=src?journees[src].filter(function(f){return !reprises[f.chambre];})
+      .map(function(f){return ficheReconduite(f,iso,src);}):[];
+    const fusion=manuelles.concat(neuves).sort(function(a,b){return a.chambre-b.chambre;});
+    if(memeJournee(liste,fusion))continue;
+    if(fusion.length)journees[iso]=fusion;
+    else if(iso===jourActif)journees[iso]=[];
+    else delete journees[iso];
+    maj++;
   }
-  const rafraichies=rafraichirReconduits();
-  if(cree||rafraichies){
-    if(cree)sauverReconduits();
+  return maj;
+}
+function rafraichirReconduits(){return recalculerReconduits();}
+function genererJoursChomes(){
+  const maj=recalculerReconduits();
+  if(maj){
     sauver();renderJournees();renderPlan();majOngletJour();
     if(ongletActif==='histo')ouvrirVueHisto(vueHisto);
-    if(cree)toast(cree>1?cree+' journées chômées reconduites.':'Journée chômée reconduite.');
-    else toast(rafraichies>1?rafraichies+' journées reconduites mises à jour.':'Journée reconduite mise à jour.');
+    toast(maj>1?maj+' journées chômées mises à jour.':'Journée chômée mise à jour.');
   }
-  return cree;
+  return maj;
 }
 
 /* ================= ETAT ================= */
@@ -2198,6 +2472,7 @@ function majPuceSync(){
 }
 /* Qui est connecté : carte de la barre latérale et carte « Mon compte ». */
 function roleCompte(){
+  if(membreCourant&&ROLES[membreCourant.role])return ROLES[membreCourant.role].lib;
   return lectureSeule===true?'Lecture seule':(lectureSeule===false?'Saisie autorisée':(syncCode?'Droits en cours de vérification':'Compte de l\'équipe'));
 }
 function majIdentite(){
@@ -2248,6 +2523,8 @@ function majEntete(){
     titre='Analyses';sous='Température et gazages de chaque mûrisserie';
   }else if(ongletActif==='histo'){
     titre='Historique';sous='Toutes les journées enregistrées';
+  }else if(ongletActif==='equipe'){
+    titre='Équipe';sous='Membres, rôles et mots de passe provisoires';
   }else{
     titre='Réglages';sous='Compte, synchronisation, jours chômés et sauvegarde';
   }
@@ -2263,25 +2540,23 @@ function majNavigation(){
   });
   majEntete();
 }
-/* Passer d'une journée renseignée à l'autre sans repasser par l'historique. */
-function joursRenseignes(){
-  return Object.keys(journees).filter(function(k){return jourValide(k)&&journees[k]&&journees[k].length;}).sort();
-}
+/* Passer d'un jour à l'autre sans repasser par l'historique. */
 function renderNavJour(){
   const hote=document.getElementById('navJour');
   if(!hote)return;
-  const auj=isoJour(),liste=joursRenseignes();
-  const avant=liste.filter(function(k){return k<jourActif;});
-  const prec=avant.length?avant[avant.length-1]:null;
-  const suiv=liste.filter(function(k){return k>jourActif&&k<=auj;})[0]||(jourActif<auj?auj:null);
+  const auj=isoJour();
+  const prec=isoDecale(jourActif,-1);
+  const suiv=jourActif<auj?isoDecale(jourActif,1):null;
   const btn=function(iso,nom,lib){
     return '<button type="button" class="ico-btn" '+(iso?'data-jour="'+iso+'"':'disabled')
       +' title="'+esc(lib)+'" aria-label="'+esc(lib)+'">'+ico(nom)+'</button>';
   };
-  hote.innerHTML=btn(prec,'precedent',prec?'Journée précédente : '+jourCourt(prec):'Aucune journée précédente')
+  const vide=!(journees[jourActif]&&journees[jourActif].length);
+  hote.innerHTML=btn(prec,'precedent','Jour précédent : '+jourCourt(prec))
     +'<span class="nav-jour-lib">'+ico('calendrier')+'<b>'+esc(jourCourt(jourActif))+'</b>'
-    +(jourActif===auj?'<span class="jour-marque">aujourd\'hui</span>':'')+'</span>'
-    +btn(suiv,'ouvrir',suiv?'Journée suivante : '+jourCourt(suiv):'Aucune journée suivante')
+    +(jourActif===auj?'<span class="jour-marque">aujourd\'hui</span>':'')
+    +(vide&&jourActif!==auj?'<span class="jour-marque vide">non renseignée</span>':'')+'</span>'
+    +btn(suiv,'ouvrir',suiv?'Jour suivant : '+jourCourt(suiv):'Aucun jour suivant')
     +(jourActif!==auj?'<button type="button" class="bouton petit" data-jour="'+auj+'">Revenir à aujourd\'hui</button>':'');
 }/* Le lecteur doit savoir que cette feuille n'a pas été saisie par quelqu'un :
    elle décrit ce que les chambres font toutes seules. */
@@ -4201,6 +4476,7 @@ function demanderConfirmation(opt){
     var bloc=$('modaleCaseBloc'),caseC=$('modaleCase'),ok=$('modaleOk');
     ok.textContent=opt.okLabel||'Confirmer';
     $('modaleAnnuler').textContent=opt.annulerLabel||'Annuler';
+    $('modaleAnnuler').hidden=!!opt.sansAnnuler;
     if(opt.caseTexte){
       bloc.hidden=false;caseC.checked=false;
       $('modaleCaseTexte').innerHTML=opt.caseTexte;
@@ -4254,6 +4530,8 @@ function ouvrirOnglet(nom,vue){
   $('pane-jour').hidden=(nom!=='jour');
   $('pane-histo').hidden=(nom!=='histo');
   $('pane-reglages').hidden=(nom!=='reglages');
+  $('pane-equipe').hidden=(nom!=='equipe');
+  if(nom==='equipe'){suivreEquipe();renderEquipe();}
   if(nom==='histo')ouvrirVueHisto(vueHisto);
   if(nom==='reglages'){renderCarteCompte();renderStockage();renderCarteSync();renderCarteChomes();renderCarteInstall();renderInfosAppli();majActionsSauvegarde();}
   window.scrollTo({top:0,behavior:'smooth'});
@@ -4393,42 +4671,101 @@ function texteRecherche(iso){
   cacheRecherche[iso]={cle:cle,txt:txt};
   return txt;
 }
+/* Tous les jours, du premier enregistré jusqu'à aujourd'hui — y compris ceux
+   où personne n'a rien saisi, ou où l'application n'a pas été ouverte : on
+   peut ainsi les renseigner après coup. Aucun n'est créé pour autant : un
+   jour vide n'existe que tant qu'on le regarde. */
+function tousLesJours(){
+  const cles=Object.keys(journees).filter(jourValide).sort();
+  const fin=isoJour();
+  const debut=cles.length&&cles[0]<fin?cles[0]:fin;
+  const out=[];
+  for(let iso=debut;iso<=fin;iso=isoDecale(iso,1)){out.push(iso);if(out.length>2000)break;}
+  return out;
+}
+/* La rangée des huit chambres d'une journée, en pastilles de couleur : on voit
+   d'un coup d'œil ce qui tournait ce jour-là. */
+function classeChambre(f){
+  if(!f)return 'libre';
+  normaliser(f);
+  const fam=ETATS[f.etat].famille;
+  if(fam==='hs')return 'hs';
+  if(fam==='requis')return 'requis';
+  return f.conservation.type||'adefinir';
+}
+function libelleChambre(f){
+  if(!f)return 'libre';
+  const fam=ETATS[f.etat].famille;
+  if(fam!=='service')return ETATS[f.etat].label.toLowerCase();
+  const c=f.conservation;
+  return c.type?CONSERVATION[c.type].label.toLowerCase()+(c.temperature!==''?' '+c.temperature+' °C':''):'conservation à définir';
+}
+function bandeChambres(iso){
+  const l=journees[iso]||[];
+  return '<div class="jl-bande" aria-hidden="true">'+CHAMBRES.map(function(n){
+    const f=l.find(function(x){return x.chambre===n;});
+    return '<span class="jl-case '+classeChambre(f)+'" title="Mûrisserie '+n+' : '+esc(libelleChambre(f))+'">'+n+'</span>';
+  }).join('')+'</div>';
+}
 function renderHistorique(){
   const q=sansAccents(($('rechercheJour').value||'').trim());
-  let cles=Object.keys(journees).sort().reverse();
+  let cles=tousLesJours().reverse();
   if(q)cles=cles.filter(function(k){return texteRecherche(k).indexOf(q)>=0;});
   const hote=$('listeJours');
   if(!cles.length){
-    hote.innerHTML='<p class="vide">'+(q?'Aucune journée ne correspond à cette recherche.':'Aucune journée enregistrée.')+'</p>';
+    hote.innerHTML='<p class="vide">Aucune journée ne correspond à cette recherche.</p>';
     return;
   }
-  hote.innerHTML=cles.map(function(k){
-    const b=bilanJournee(k),cejour=(k===isoJour());
-    const details=[];
-    if(b.utilisees)details.push(b.utilisees+' chambre'+(b.utilisees>1?'s':'')+' utilisée'+(b.utilisees>1?'s':''));
-    const m=detailChambres(b);
-    if(m)details.push(m);
-    if(b.ident)details.push('dont '+b.ident+' en identification');
-    if(!details.length)details.push('aucune chambre renseignée');
-    const chiffre=(b.total===0&&b.inc===0)?'—':(b.inc>0?'quantités à confirmer':b.total+' palette'+(b.total>1?'s':''));
+  const lecture=(lectureSeule===true);
+  let mois='',h='';
+  cles.forEach(function(k){
     /* k ne sert d'argument que s'il a bien la forme d'une date : une clé
        reçue d'ailleurs ne doit jamais pouvoir s'écrire dans un onclick */
-    if(!jourValide(k))return '';
-    const lecture=(lectureSeule===true);
-    return '<div class="jour-ligne'+(cejour?' aujourdhui':'')+'">'
-      +'<div class="jour-tete"><span class="jour-nom">'+esc(jourCourt(k))+'</span>'
+    if(!jourValide(k))return;
+    const m=moisDe(k);
+    if(m!==mois){
+      if(mois)h+='</div>';
+      mois=m;
+      const nb=cles.filter(function(x){return moisDe(x)===m&&journees[x]&&journees[x].length;}).length;
+      h+='<div class="jl-mois"><h3>'+esc(dateDe(m+'-01').toLocaleDateString('fr-FR',{month:'long',year:'numeric'}))+'</h3>'
+        +'<span>'+nb+' journée'+(nb>1?'s':'')+' renseignée'+(nb>1?'s':'')+'</span></div><div class="jl-groupe">';
+    }
+    const d=dateDe(k),cejour=(k===isoJour());
+    const rempli=!!(journees[k]&&journees[k].length);
+    const b=bilanJournee(k);
+    const details=[];
+    if(rempli){
+      if(b.utilisees)details.push(b.utilisees+' chambre'+(b.utilisees>1?'s':'')+' utilisée'+(b.utilisees>1?'s':''));
+      const mm=detailChambres(b);if(mm)details.push(mm);
+    }
+    const chiffre=!rempli?'':(b.total===0&&b.inc===0)?'—':(b.inc>0?'à confirmer':b.total+' pal.');
+    const nomJour=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+    h+='<div class="jour-ligne'+(cejour?' aujourdhui':'')+(rempli?'':' non-renseignee')+(estChome(k)?' chome':'')+'">'
+      +'<div class="jl-date"><b>'+d.getDate()+'</b><span>'+esc(d.toLocaleDateString('fr-FR',{weekday:'short'}).replace('.',''))+'</span></div>'
+      +'<div class="jl-corps"><div class="jour-tete"><span class="jour-nom">'+esc(nomJour)+'</span>'
       +(cejour?'<span class="jour-marque">aujourd\'hui</span>':'')
       +(journeeAutomatique(k)?'<span class="jour-marque auto">reconduite</span>':'')
-      +'<span class="jour-chiffres num">'+esc(chiffre)+'</span></div>'
-      +'<div class="jour-detail">'+esc(details.join(' · '))+'</div>'
+      +(estChome(k)&&!journeeAutomatique(k)?'<span class="jour-marque chome">'+esc(nomFerie(k)||'chômé')+'</span>':'')
+      +'</div>'
+      +(rempli?bandeChambres(k)+'<div class="jour-detail">'+esc(details.join(' · '))+'</div>'
+             :'<div class="jour-detail">Journée non renseignée'+(k<isoJour()?' — elle peut être complétée après coup.':'.')+'</div>')
+      +'</div>'
+      +(chiffre?'<div class="jl-chiffre num">'+esc(chiffre)+'</div>':'')
       +'<div class="jour-actions">'
-      +'<button type="button" class="bouton petit" onclick="ouvrirJournee(\''+k+'\')">Ouvrir'+ico('ouvrir')+'</button>'
-      +'<button type="button" class="bouton secondaire petit" onclick="exporterJournee(\''+k+'\',\'pdf\')">'+ico('imprimer')+'PDF</button>'
-      +'<button type="button" class="bouton secondaire petit" onclick="exporterJournee(\''+k+'\',\'excel\')">'+ico('excel')+'Excel</button>'
-      +'<button type="button" class="bouton secondaire petit" onclick="exporterJournee(\''+k+'\',\'word\')">'+ico('word')+'Word</button>'
-      +(lecture?'':boutonIcone('supprimer','Supprimer la journée du '+jourCourt(k),'supprimerJournee(\''+k+'\')','danger pousse'))
+      +(rempli
+        ?'<button type="button" class="bouton petit" onclick="ouvrirJournee(\''+k+'\')">Ouvrir'+ico('ouvrir')+'</button>'
+          +'<span class="groupe-export">'
+          +'<button type="button" class="bouton secondaire petit" onclick="exporterJournee(\''+k+'\',\'pdf\')" title="Imprimer ou enregistrer en PDF">'+ico('imprimer')+'PDF</button>'
+          +'<button type="button" class="bouton secondaire petit" onclick="exporterJournee(\''+k+'\',\'excel\')" title="Télécharger au format Excel">'+ico('excel')+'Excel</button>'
+          +'<button type="button" class="bouton secondaire petit" onclick="exporterJournee(\''+k+'\',\'word\')" title="Télécharger au format Word">'+ico('word')+'Word</button>'
+          +'</span>'
+          +(lecture?'':boutonIcone('supprimer','Supprimer la journée du '+jourCourt(k),'supprimerJournee(\''+k+'\')','danger'))
+        :(lecture?'<button type="button" class="bouton secondaire petit" onclick="ouvrirJournee(\''+k+'\')">Consulter'+ico('ouvrir')+'</button>'
+                 :'<button type="button" class="bouton secondaire petit" onclick="ouvrirJournee(\''+k+'\')">'+ico('plus')+'Renseigner</button>'))
       +'</div></div>';
-  }).join('');
+  });
+  if(mois)h+='</div>';
+  hote.innerHTML=h;
 }
 function ouvrirJournee(iso){
   changerJour(iso);
@@ -4665,9 +5002,9 @@ function texteJour(p){
 }
 function svgChambre(serie,ech,L,gazMax){
   const aGaz=serie.some(function(p){return p.gaz;});
-  const ML=30,MR=10,HT=12,HC=78,HG=aGaz?26:0;
+  const ML=34,MR=10,HT=14,HC=110,HG=aGaz?30:0;
   const yBas=HT+HC;
-  const yGaz=yBas+18, yAxe=aGaz?(yGaz+HG+13):(yBas+17), H=yAxe+4;
+  const yGaz=yBas+20, yAxe=aGaz?(yGaz+HG+15):(yBas+19), H=yAxe+5;
   const larg=L-ML-MR, pas=larg/serie.length;
   const y=function(t){return yBas-(t-ech.bas)/(ech.haut-ech.bas)*HC;};
   const x=function(i){return ML+i*pas;};
@@ -4700,15 +5037,15 @@ function svgChambre(serie,ech,L,gazMax){
   /* repères horizontaux, discrets */
   for(let t=ech.bas;t<=ech.haut;t+=ech.pas){
     g+='<line x1="'+ML+'" y1="'+y(t).toFixed(1)+'" x2="'+(L-MR)+'" y2="'+y(t).toFixed(1)
-      +'" stroke="#16211A" stroke-width="1" opacity="'+(t===ech.bas?'.10':'.055')+'"/>'
-      +'<text x="'+(ML-7)+'" y="'+(y(t)+3.2).toFixed(1)+'" text-anchor="end" font-size="8.5" fill="#9AA39B">'+t+'</text>';
+      +'" stroke="'+(t===ech.bas?'#D1D5DB':'#EEF0F3')+'" stroke-width="1"/>'
+      +'<text x="'+(ML-8)+'" y="'+(y(t)+3.5).toFixed(1)+'" text-anchor="end" font-size="10" fill="#6B7280">'+t+'°</text>';
   }
 
   /* aplat très léger sous la courbe : donne du corps sans charger le dessin */
   serie.forEach(function(p,i){
     if(p.temp===null||p.temp===undefined)return;
     g+='<rect x="'+x(i).toFixed(1)+'" y="'+y(p.temp).toFixed(1)+'" width="'+pas.toFixed(2)
-      +'" height="'+Math.max(0,yBas-y(p.temp)).toFixed(1)+'" fill="'+COUL_PRODUIT[p.produit]+'" opacity=".07"/>';
+      +'" height="'+Math.max(0,yBas-y(p.temp)).toFixed(1)+'" fill="'+COUL_PRODUIT[p.produit]+'" opacity=".09"/>';
   });
 
   /* la courbe en marches : une consigne vaut pour toute la journée */
@@ -4735,7 +5072,7 @@ function svgChambre(serie,ech,L,gazMax){
 
   /* couloir des gazages, seulement si la chambre en a connu */
   if(aGaz){
-    g+='<text x="'+ML+'" y="'+(yGaz-4)+'" font-size="7.5" fill="#B3BBB3" letter-spacing=".7">GAZAGE · MIN</text>';
+    g+='<text x="'+ML+'" y="'+(yGaz-4)+'" font-size="9" fill="#6B7280" letter-spacing=".6">GAZAGE (MIN)</text>';
     serie.forEach(function(p,i){
       if(!p.gaz)return;
       const h=Math.max(3,p.gaz/Math.max(gazMax,1)*(HG-11));
@@ -4752,7 +5089,7 @@ function svgChambre(serie,ech,L,gazMax){
   const k=Math.max(1,Math.ceil(serie.length/Math.max(1,Math.floor(larg/32))));
   serie.forEach(function(p,i){
     if(i%k)return;
-    g+='<text x="'+(x(i)+pas/2).toFixed(1)+'" y="'+yAxe+'" text-anchor="middle" font-size="8.5" fill="#9AA39B">'
+    g+='<text x="'+(x(i)+pas/2).toFixed(1)+'" y="'+yAxe+'" text-anchor="middle" font-size="10" fill="#6B7280">'
       +Number(p.iso.slice(8,10))+'</text>';
   });
   return '<svg class="svg-analyse" viewBox="0 0 '+L+' '+H+'" role="img"'
@@ -4827,15 +5164,71 @@ function renderAnalyses(){
   const ech=echelleJolie(min,max);
   /* on dessine à la largeur réelle du bloc : les textes du SVG gardent ainsi
      leur taille en pixels au lieu d'être réduits sur un petit écran */
-  const L=Math.max(320,Math.min(900,Math.round(hote.clientWidth||640)));
+  const L=Math.max(320,Math.min(1100,Math.round((hote.clientWidth||640)-34)));
   seriesAnalyse=series;
-  hote.innerHTML=CHAMBRES.map(function(n){
+  hote.innerHTML=vueEnsemble(jours,series)
+    +'<div class="analyses-grille">'+CHAMBRES.map(function(n){
+    const st=statsChambre(series[n]);
     return '<article class="carte-analyse"><div class="analyse-tete">'
-      +'<span class="titre">Mûrisserie</span><span class="chambre-num num">'+n+'</span>'
-      +'<span class="analyse-lecture" id="lecture-'+n+'"></span></div>'
+      +'<span class="analyse-num">'+n+'</span>'
+      +'<span class="analyse-titre"><b>Mûrisserie '+n+'</b><small>'+esc(st.resume)+'</small></span>'
+      +'<span class="analyse-chiffres">'
+      +(st.min!==null?'<span class="chiffre"><b class="num">'+fmtTemp(st.min)+'–'+fmtTemp(st.max)+'</b><small>°C min–max</small></span>':'')
+      +(st.gaz?'<span class="chiffre"><b class="num">'+st.gaz+'</b><small>min de gazage</small></span>':'')
+      +'</span></div>'
+      +'<div class="analyse-lecture" id="lecture-'+n+'">Glissez sur la courbe pour lire chaque jour.</div>'
       +svgChambre(series[n],ech,L,gazMax).replace('<svg ','<svg data-chambre="'+n+'" ')
       +'</article>';
-  }).join('');
+  }).join('')+'</div>';
+  /* la vue d'ensemble s'ouvre sur les jours les plus récents */
+  const d=hote.querySelector('.ve-defile');if(d)d.scrollLeft=d.scrollWidth;
+}
+function fmtTemp(t){return String(Math.round(t*10)/10).replace('.',',');}
+/* Quelques chiffres par chambre sur la période : de quoi comparer sans lire
+   chaque courbe. */
+function statsChambre(serie){
+  let min=null,max=null,gaz=0,service=0,arret=0,vide=0;
+  serie.forEach(function(p){
+    if(p.temp!==null&&p.temp!==undefined){if(min===null||p.temp<min)min=p.temp;if(max===null||p.temp>max)max=p.temp;}
+    if(p.gaz)gaz+=p.gaz;
+    if(p.etat==='service'||p.etat==='requis')service++;
+    else if(p.etat==='hs')arret++;
+    else vide++;
+  });
+  const r=[];
+  r.push(service+' jour'+(service>1?'s':'')+' en service');
+  if(arret)r.push(arret+' à l\'arrêt');
+  if(vide)r.push(vide+' vide'+(vide>1?'s':'')+' ou non renseigné'+(vide>1?'s':''));
+  return{min:min,max:max,gaz:gaz,resume:r.join(' · ')};
+}
+/* Vue d'ensemble : une case par chambre et par jour, dans la couleur du mode
+   de conservation. La lettre répète la couleur (F, A, C…) : l'avocat vert et
+   la mangue orange se confondent pour un œil daltonien, jamais la lettre.
+   Un clic ouvre la journée. */
+var LETTRE_MODE={froid:'F',affinage:'A',chauffe:'C',adefinir:'?',requis:'R',hs:'×',libre:''};
+function vueEnsemble(jours,series){
+  const titreCol=function(iso){const d=dateDe(iso);return d.getDate();};
+  let h='<section class="vue-ensemble"><div class="ve-tete"><h3>Vue d\'ensemble</h3>'
+    +'<p class="legende-modes">'
+    +[['froid','F','froid'],['affinage','A','affinage'],['chauffe','C','chauffe'],['adefinir','?','à définir'],
+      ['requis','R','réquisitionnée'],['hs','×','hors service'],['libre','','vide']].map(function(x){
+      return '<span class="cle"><span class="ve-case '+x[0]+'">'+x[1]+'</span>'+x[2]+'</span>';}).join('')
+    +'</p></div><div class="ve-defile"><table class="ve-table"><thead><tr><th></th>'
+    +jours.map(function(iso){
+      const d=dateDe(iso);
+      return '<th class="'+(estChome(iso)?'chome':'')+'" title="'+esc(jourCourt(iso))+'">'
+        +'<span>'+d.toLocaleDateString('fr-FR',{weekday:'narrow'})+'</span>'+titreCol(iso)+'</th>';}).join('')
+    +'</tr></thead><tbody>';
+  CHAMBRES.forEach(function(n){
+    h+='<tr><th>M'+n+'</th>'+series[n].map(function(p){
+      const l=journees[p.iso]||[];
+      const f=l.find(function(x){return x.chambre===n;});
+      const cl=classeChambre(f);
+      return '<td><button type="button" class="ve-case '+cl+'" data-jour="'+p.iso+'"'
+        +' title="Mûrisserie '+n+' — '+esc(jourCourt(p.iso))+' : '+esc(texteJour(p))+'">'+LETTRE_MODE[cl]+'</button></td>';
+    }).join('')+'</tr>';
+  });
+  return h+'</tbody></table></div></section>';
 }
 function reglerPeriode(du,au){analyseDu=du;analyseAu=au;renderAnalyses();}
 
@@ -5060,7 +5453,9 @@ function nomVersAdresse(nom){
 function adresseVersNom(adr){
   const a=String(adr||'');
   const i=a.indexOf('@'+DOMAINE_COMPTES);
-  return i>0?a.slice(0,i):a;
+  /* « seb+2@… » est le deuxième compte technique de seb, créé lors d'un
+     mot de passe provisoire : pour tout le monde, c'est toujours « seb » */
+  return (i>0?a.slice(0,i):a).replace(/\+\d+$/,'');
 }
 function nomValide(nom){
   return /^[a-zA-Z0-9._-]{2,30}$/.test(String(nom||'').trim());
@@ -5133,7 +5528,9 @@ function surveillerAuth(){
         detacherSync();lectureSeule=null;renderVerrou();
         setSyncStatus('off');
       }
+      if(!utilisateur){membreCourant=null;detacherEquipe();}
       renderCarteSync();majIdentite();evaluerVerrou();
+      if(utilisateur&&!connexionEnCours)chargerMembre().then(controlerMembre);
     });
   }).catch(function(err){
     authDemarree=false;
@@ -5312,7 +5709,7 @@ function deverrouiller(uid){
 function evaluerVerrou(){
   const e=etatConnexion;
   if(connexionEnCours||e.occupe)return;
-  if(!deverrouille&&(e.mode==='salle'||e.mode==='oubli'||e.autreCompte))return;
+  if(!deverrouille&&(e.mode==='salle'||e.mode==='oubli'||e.mode==='nouveauMdp'||e.mode==='sansAcces'||e.autreCompte))return;
   if(utilisateur){
     if(ss(SESSION_OUVERTE)===utilisateur.uid){if(!deverrouille)deverrouiller(utilisateur.uid);return;}
     if(!deverrouille&&(e.mode==='deverrouillage'||e.mode==='horsligne')){
@@ -5348,7 +5745,7 @@ function renderConnexion(){
   if(!c)return;
   /* ce qui est déjà tapé survit à un nouveau dessin de la carte */
   const garde={};
-  ['cxNom','cxMdp','cxCode'].forEach(function(id){const el=$(id);if(el)garde[id]=el.value;});
+  ['cxNom','cxMdp','cxMdp2','cxCode'].forEach(function(id){const el=$(id);if(el)garde[id]=el.value;});
   const e=etatConnexion,compte=compteConnu();
   const err=e.erreur?'<div class="cx-erreur" role="alert">'+ico('info')+'<span>'+esc(e.erreur)+'</span></div>':'';
   const bouton=function(txt,occ){
@@ -5402,6 +5799,21 @@ function renderConnexion(){
       +'<button type="button" class="bouton secondaire cx-principal" id="cxCreer"'+(e.occupe?' disabled':'')+'>'
       +ico('plus')+'Créer une nouvelle équipe</button>'
       +'<div class="cx-liens centre"><button type="button" class="cx-lien" id="cxPlusTard">Continuer sans synchroniser</button></div>';
+  }else if(e.mode==='nouveauMdp'){
+    h='<h2 id="cxTitre">Choisissez votre mot de passe</h2>'
+      +'<p class="cx-intro">Vous vous êtes connecté avec un mot de passe provisoire. Choisissez-en un que vous seul '
+      +'connaîtrez : il vous sera demandé désormais.</p>'+err
+      +'<form id="cxForm" novalidate>'
+      +'<input type="text" autocomplete="username" value="'+esc(compte?compte.nom:'')+'" hidden>'
+      +champCx('cxMdp','Nouveau mot de passe','password','autocomplete="new-password" minlength="8"')
+      +champCx('cxMdp2','Confirmez le mot de passe','password','autocomplete="new-password" minlength="8"')
+      +'<p class="cx-aide">Huit caractères au minimum.</p>'
+      +bouton('Enregistrer et continuer','Enregistrement…')+'</form>';
+  }else if(e.mode==='sansAcces'){
+    h='<h2 id="cxTitre">Accès retiré</h2>'
+      +'<p class="cx-intro">Le compte <b>'+esc(compte?compte.nom:'')+'</b> ne fait plus partie de l\'équipe, '
+      +'ou son mot de passe a été remplacé par un mot de passe provisoire.</p>'
+      +'<button type="button" class="bouton cx-principal" id="cxAutre">Se connecter</button>';
   }else{ /* reseau */
     h='<h2 id="cxTitre">Pas de connexion</h2>'
       +'<p class="cx-intro">Le service de comptes est injoignable. La première connexion sur un appareil '
@@ -5419,6 +5831,7 @@ function brancherConnexion(){
     ev.preventDefault();
     if(e.mode==='connexion')soumettreConnexion();
     else if(e.mode==='salle')soumettreSalle();
+    else if(e.mode==='nouveauMdp')soumettreNouveauMdp();
     else soumettreDeverrouillage();
   });
   const lien=function(id,fn){const b=$(id);if(b)b.addEventListener('click',fn);};
@@ -5444,26 +5857,82 @@ function brancherConnexion(){
 }
 function soumettreConnexion(){
   const e=etatConnexion;
-  const nom=($('cxNom').value||'').trim(),mdp=$('cxMdp').value||'';
+  const nom=($('cxNom').value||'').trim().toLowerCase(),mdp=$('cxMdp').value||'';
   if(!nomValide(nom)){e.erreur='Nom d\'utilisateur invalide : lettres, chiffres, point, tiret ou souligné.';renderConnexion();return;}
   if(!mdp){e.erreur='Saisissez votre mot de passe.';renderConnexion();return;}
   e.occupe=true;e.erreur='';connexionEnCours=true;renderConnexion();
+  let refuse=false;
   ensureFirebaseApp().then(function(){
-    return window.firebase.auth().signInWithEmailAndPassword(nomVersAdresse(nom),mdp);
+    return resoudreAdresse(nom);
+  }).then(function(adresse){
+    return window.firebase.auth().signInWithEmailAndPassword(adresse,mdp);
   }).then(function(cred){
-    return memoriserVerrou(cred.user,mdp).then(function(){return cred.user;});
+    const u=cred.user;
+    /* la fiche d'équipe dit ce que ce compte peut faire — et s'il en fait
+       encore partie */
+    return chargerMembre(u.email).then(function(m){
+      if(!m){
+        refuse=true;
+        oublierVerrou();
+        return window.firebase.auth().signOut().then(function(){
+          throw{message:'Ce compte ne fait pas (ou plus) partie de l\'équipe. Demandez l\'accès à l\'administrateur '
+            +'ou à la responsable de la mûrisserie.'};
+        });
+      }
+      return memoriserVerrou(u,mdp).then(function(){return u;});
+    });
   }).then(function(u){
     e.occupe=false;e.autreCompte=false;
     ss(SESSION_OUVERTE,u.uid);
+    connexionEnCours=false;
+    /* mot de passe provisoire : la personne choisit le sien avant d'entrer */
+    if(membreCourant&&membreCourant.provisoire){e.mode='nouveauMdp';e.erreur='';renderConnexion();return;}
     /* première connexion sur cet appareil : il reste à rejoindre l'équipe */
-    if(!syncCode){e.mode='salle';e.erreur='';connexionEnCours=false;renderConnexion();return;}
+    if(!syncCode){e.mode='salle';e.erreur='';renderConnexion();return;}
     deverrouiller(u.uid);
-    toast('Bienvenue, '+prenomDe(adresseVersNom(u.email))+'.');
+    toast('Bienvenue, '+prenomDe(membreCourant?membreCourant.nom:adresseVersNom(u.email))+'.');
   }).catch(function(err){
     connexionEnCours=false;e.occupe=false;
-    e.erreur=(err&&err.code)?messageAuth(err):'Connexion impossible : vérifiez l\'accès à Internet.';
+    e.erreur=(err&&err.code)?messageAuth(err)
+      :((err&&err.message&&refuse)?err.message:'Connexion impossible : vérifiez l\'accès à Internet.');
+    if(refuse)e.mode='connexion';
     renderConnexion();
     const m=$('cxMdp');if(m){m.value='';m.focus();}
+  });
+}
+/* Le nom tapé mène, par l'annuaire, à l'adresse du compte technique. Les
+   comptes d'avant l'annuaire gardent l'adresse « nom@… ». */
+function resoudreAdresse(nom){
+  return firestoreDb.collection('annuaire').doc(nom).get().then(function(d){
+    const a=d.exists&&d.data()&&d.data().email;
+    return (typeof a==='string'&&a.indexOf('@'+DOMAINE_COMPTES)>0)?a:nomVersAdresse(nom);
+  }).catch(function(){return nomVersAdresse(nom);});
+}
+function soumettreNouveauMdp(){
+  const e=etatConnexion;
+  const a=$('cxMdp').value||'',b=$('cxMdp2').value||'';
+  if(a.length<8){e.erreur='Huit caractères au minimum.';renderConnexion();return;}
+  if(a!==b){e.erreur='Les deux mots de passe ne correspondent pas.';renderConnexion();return;}
+  const u=window.firebase.auth().currentUser;
+  if(!u){e.mode='connexion';e.erreur='Session expirée : reconnectez-vous.';renderConnexion();return;}
+  e.occupe=true;e.erreur='';renderConnexion();
+  u.updatePassword(a).then(function(){
+    return firestoreDb.collection('membres').doc(u.email).update({provisoire:false,majLe:Date.now()});
+  }).then(function(){
+    if(membreCourant)membreCourant.provisoire=false;
+    memoriserMembre();
+    return memoriserVerrou(u,a);
+  }).then(function(){
+    e.occupe=false;
+    if(!syncCode){e.mode='salle';e.erreur='';renderConnexion();return;}
+    deverrouiller(u.uid);
+    toast('Mot de passe enregistré. Bienvenue, '+prenomDe(membreCourant?membreCourant.nom:utilisateur.nom)+'.');
+  }).catch(function(err){
+    e.occupe=false;
+    if(err&&err.code==='auth/requires-recent-login'){
+      e.mode='connexion';e.erreur='Par sécurité, reconnectez-vous avec le mot de passe provisoire.';
+    }else e.erreur=(err&&err.code)?messageAuth(err):'Enregistrement impossible : vérifiez l\'accès à Internet.';
+    renderConnexion();
   });
 }
 function soumettreDeverrouillage(){
@@ -5517,6 +5986,267 @@ function soumettreSalle(){
     renderConnexion();
   });
 }
+/* =========================================================================
+   ÉQUIPE : RÔLES ET MOTS DE PASSE PROVISOIRES
+   Chaque personne a une fiche membres/{adresse du compte} qui porte son rôle ;
+   les règles Firestore la lisent directement, il n'y a donc plus de liste à
+   modifier à la main dans la console. L'annuaire (annuaire/{nom}) mène du nom
+   tapé à la connexion à l'adresse du compte.
+   Firebase gratuit ne permet pas de changer le mot de passe d'un autre compte
+   depuis l'application. Le mot de passe provisoire passe donc par un nouveau
+   compte technique (« seb+2@… ») qui reprend le nom et le rôle de la
+   personne ; l'ancien perd aussitôt tout accès. Pour la personne, rien ne
+   change : elle se connecte toujours avec « seb ».
+   ========================================================================= */
+var ROLES={
+  admin:{lib:'Administrateur',ecriture:true,
+    desc:'Tous les droits. Gère toute l\'équipe, y compris la responsable.'},
+  responsable:{lib:'Responsable mûrisserie',ecriture:true,
+    desc:'Saisie et consultation. Gère les mûrisseurs et les observateurs.'},
+  murisseur:{lib:'Mûrisseur',ecriture:true,
+    desc:'Saisie et consultation des implantations.'},
+  observateur:{lib:'Observateur',ecriture:false,
+    desc:'Consultation, impression et exports, sans modification.'}
+};
+var ORDRE_ROLES=['admin','responsable','murisseur','observateur'];
+var membreCourant=null;          /* {email, nom, role, provisoire} */
+var CLE_MEMBRE='murisserie.membre.v1';
+var membresEquipe=[],unsubEquipe=null,equipeErreur='';
+
+function rolesGeres(){
+  if(!membreCourant)return[];
+  if(membreCourant.role==='admin')return ORDRE_ROLES.slice();
+  if(membreCourant.role==='responsable')return['murisseur','observateur'];
+  return[];
+}
+function peutGerer(m){
+  const r=rolesGeres();
+  if(!m)return r.length>0;
+  return r.indexOf(m.role)>=0&&!!membreCourant&&m.email!==membreCourant.email;
+}
+function memoriserMembre(){
+  try{if(membreCourant)localStorage.setItem(CLE_MEMBRE,JSON.stringify(membreCourant));}catch(e){}
+}
+function lireMembreMemo(email){
+  try{const m=JSON.parse(localStorage.getItem(CLE_MEMBRE));return (m&&m.email===email&&ROLES[m.role])?m:null;}
+  catch(e){return null;}
+}
+/* Charge la fiche du compte connecté. Hors ligne, le dernier rôle connu sur
+   cet appareil tient lieu de fiche. Rend null si le compte n'est pas (ou plus)
+   membre de l'équipe. */
+function chargerMembre(email){
+  email=email||(utilisateur&&utilisateur.email);
+  if(!email||!firestoreDb)return Promise.resolve(null);
+  return firestoreDb.collection('membres').doc(email).get().then(function(d){
+    const x=d.exists?d.data():null;
+    membreCourant=(x&&ROLES[x.role])?{email:email,nom:String(x.nom||adresseVersNom(email)),role:x.role,provisoire:x.provisoire===true}:null;
+    if(membreCourant)memoriserMembre();
+    appliquerRole();
+    return membreCourant;
+  }).catch(function(){
+    membreCourant=lireMembreMemo(email);
+    appliquerRole();
+    return membreCourant||{horsLigne:true};
+  });
+}
+/* Au démarrage d'une session déjà ouverte : un compte retiré de l'équipe, ou
+   dont le mot de passe provisoire n'a pas encore été remplacé, ne passe pas. */
+function controlerMembre(m){
+  if(m&&m.horsLigne)return;
+  if(!m){verrouiller('sansAcces');return;}
+  if(m.provisoire&&deverrouille)verrouiller('nouveauMdp');
+}
+function appliquerRole(){
+  if(membreCourant){
+    if(utilisateur)utilisateur.nom=membreCourant.nom;
+    definirLectureSeule(!ROLES[membreCourant.role].ecriture);
+  }
+  const o=document.getElementById('ongletEquipe');
+  if(o)o.hidden=!peutGerer();
+  if(!peutGerer()&&ongletActif==='equipe')ouvrirOnglet('jour');
+  majIdentite();majActionsSauvegarde();
+  if(ongletActif==='equipe')renderEquipe();
+}
+function suivreEquipe(){
+  if(unsubEquipe||!firestoreDb||!utilisateur||!peutGerer())return;
+  unsubEquipe=firestoreDb.collection('membres').onSnapshot(function(snap){
+    membresEquipe=snap.docs.map(function(d){return Object.assign({email:d.id},d.data());})
+      .filter(function(m){return ROLES[m.role];});
+    equipeErreur='';renderEquipe();
+  },function(err){equipeErreur=describeSyncError(err);renderEquipe();});
+}
+function detacherEquipe(){if(unsubEquipe){unsubEquipe();unsubEquipe=null;}membresEquipe=[];}
+
+function renderEquipe(){
+  const roles=$('equipeRoles'),liste=$('equipeListe'),ajout=$('equipeAjout');
+  if(!roles)return;
+  roles.innerHTML='<div class="roles-grille">'+ORDRE_ROLES.map(function(r){
+    return '<div class="role-carte r-'+r+'"><span class="role-badge r-'+r+'">'+esc(ROLES[r].lib)+'</span>'
+      +'<p>'+esc(ROLES[r].desc)+'</p></div>';
+  }).join('')+'</div>';
+  if(!peutGerer()){liste.innerHTML='';ajout.innerHTML='';return;}
+  const tri=membresEquipe.slice().sort(function(a,b){
+    return ORDRE_ROLES.indexOf(a.role)-ORDRE_ROLES.indexOf(b.role)||String(a.nom).localeCompare(String(b.nom));});
+  liste.innerHTML='<h3 class="equipe-titre">Membres de l\'équipe <span>'+tri.length+'</span></h3>'
+    +(equipeErreur?'<div class="err-sync">'+esc(equipeErreur)+'</div>':'')
+    +(tri.length?'':'<p class="vide">Chargement de l\'équipe…</p>')
+    +'<div class="membres">'+tri.map(function(m,i){
+      const moi=membreCourant&&m.email===membreCourant.email;
+      const gere=peutGerer(m);
+      const choix=gere?'<select class="role-choix" data-i="'+i+'" aria-label="Rôle de '+esc(m.nom)+'">'
+        +rolesGeres().map(function(r){return '<option value="'+r+'"'+(r===m.role?' selected':'')+'>'+esc(ROLES[r].lib)+'</option>';}).join('')
+        +'</select>'
+        :'<span class="role-badge r-'+m.role+'">'+esc(ROLES[m.role].lib)+'</span>';
+      return '<div class="membre">'
+        +'<span class="avatar">'+esc(prenomDe(m.nom).charAt(0))+'</span>'
+        +'<span class="membre-nom"><b>'+esc(prenomDe(m.nom))+(moi?' <em>(vous)</em>':'')+'</b>'
+        +'<small>'+esc(m.nom)+(m.provisoire?' · <span class="provisoire">mot de passe provisoire à changer</span>':'')+'</small></span>'
+        +'<span class="membre-role">'+choix+'</span>'
+        +'<span class="membre-actions">'
+        +(gere?'<button type="button" class="bouton secondaire petit" data-mdp="'+i+'">'+ico('cle')+'<span class="large-seul">Mot de passe </span>provisoire</button>'
+          +boutonIcone('supprimer','Retirer '+m.nom+' de l\'équipe','retirerMembre('+i+')','danger'):'')
+        +'</span></div>';
+    }).join('')+'</div>';
+  liste.querySelectorAll('.role-choix').forEach(function(sel){
+    sel.addEventListener('change',function(){changerRole(tri[+sel.dataset.i],sel.value,sel);});
+  });
+  liste.querySelectorAll('[data-mdp]').forEach(function(b){
+    b.addEventListener('click',function(){reinitialiserMdp(tri[+b.dataset.mdp]);});
+  });
+  window.__membresAffiches=tri;
+  ajout.innerHTML='<h3 class="equipe-titre">Ajouter un membre</h3>'
+    +'<div class="ajout-membre">'
+    +'<label class="champ"><span class="etiquette">Nom d\'utilisateur</span>'
+    +'<input type="text" id="nouveauNom" autocapitalize="none" spellcheck="false" placeholder="prenom" maxlength="30"></label>'
+    +'<label class="champ"><span class="etiquette">Rôle</span><select id="nouveauRole">'
+    +rolesGeres().map(function(r){return '<option value="'+r+'"'+(r==='murisseur'?' selected':'')+'>'+esc(ROLES[r].lib)+'</option>';}).join('')
+    +'</select></label>'
+    +'<button type="button" class="bouton" id="btnAjouterMembre">'+ico('plus')+'Ajouter</button></div>'
+    +'<p class="aide">Un mot de passe provisoire est créé et affiché une seule fois : communiquez-le de vive voix. '
+    +'La personne choisira le sien à sa première connexion.</p>';
+  $('btnAjouterMembre').addEventListener('click',ajouterMembre);
+}
+function retirerMembre(i){const m=(window.__membresAffiches||[])[i];if(m)confirmerRetrait(m);}
+
+/* Mot de passe provisoire : lisible et facile à dicter (ni 0/O ni 1/l/I). */
+function motDePasseProvisoire(){
+  const A='abcdefghjkmnpqrstuvwxyz23456789';
+  const o=new Uint8Array(10);window.crypto.getRandomValues(o);
+  let t='';
+  for(let i=0;i<10;i++){t+=A[o[i]%A.length];if(i===4)t+='-';}
+  return t;
+}
+/* Crée le compte technique dans une instance Firebase à part : la personne
+   qui gère l'équipe reste connectée sous son propre compte. */
+function creerCompteTechnique(nom,mdp){
+  const app2=window.firebase.initializeApp(activeFirebaseConfig(),'creation-'+Date.now());
+  const a2=app2.auth();
+  const essai=function(n){
+    const adresse=(n<2?nom:nom+'+'+n)+'@'+DOMAINE_COMPTES;
+    return a2.createUserWithEmailAndPassword(adresse,mdp).then(function(){return adresse;})
+      .catch(function(err){
+        if(err&&err.code==='auth/email-already-in-use'&&n<40)return essai(n<2?2:n+1);
+        throw err;
+      });
+  };
+  return a2.setPersistence(window.firebase.auth.Auth.Persistence.NONE)
+    .then(function(){return essai(1);})
+    .then(function(adresse){return a2.signOut().then(function(){return adresse;});})
+    .then(function(adresse){return app2.delete().then(function(){return adresse;});},
+          function(err){return app2.delete().then(function(){throw err;},function(){throw err;});});
+}
+function afficherMdpProvisoire(nom,mdp){
+  return demanderConfirmation({
+    titre:'Mot de passe provisoire',
+    corps:'<p>Compte <strong>'+esc(nom)+'</strong>. Communiquez ce mot de passe de vive voix : '
+      +'il ne sera plus affiché.</p>'
+      +'<div class="mdp-provisoire" id="mdpProvisoire">'+esc(mdp)+'</div>'
+      +'<button type="button" class="bouton secondaire petit" onclick="copierMdpProvisoire()">'+ico('copier')+'Copier</button>'
+      +'<p style="margin-top:12px">À sa connexion, avec le nom <strong>'+esc(nom)+'</strong>, '
+      +'la personne devra choisir son propre mot de passe.</p>',
+    okLabel:'C\'est noté',sansAnnuler:true
+  });
+}
+function copierMdpProvisoire(){
+  const t=($('mdpProvisoire')||{}).textContent||'';
+  if(navigator.clipboard&&navigator.clipboard.writeText)
+    navigator.clipboard.writeText(t).then(function(){toast('Mot de passe copié.');},function(){});
+}
+function signature(){return membreCourant?membreCourant.nom:'?';}
+function ajouterMembre(){
+  const nom=(($('nouveauNom')||{}).value||'').trim().toLowerCase();
+  const role=($('nouveauRole')||{}).value;
+  if(!/^[a-z0-9._-]{2,30}$/.test(nom)){toast('Nom invalide : 2 à 30 lettres minuscules, chiffres, point, tiret.');return;}
+  if(rolesGeres().indexOf(role)<0)return;
+  const b=$('btnAjouterMembre');b.disabled=true;b.textContent='Création…';
+  const mdp=motDePasseProvisoire();
+  firestoreDb.collection('annuaire').doc(nom).get().then(function(d){
+    if(d.exists)throw{message:'Le nom « '+nom+' » est déjà utilisé.'};
+    return creerCompteTechnique(nom,mdp);
+  }).then(function(adresse){
+    const lot=firestoreDb.batch();
+    lot.set(firestoreDb.collection('membres').doc(adresse),{nom:nom,role:role,provisoire:true,majLe:Date.now(),majPar:signature()});
+    lot.set(firestoreDb.collection('annuaire').doc(nom),{email:adresse});
+    return lot.commit();
+  }).then(function(){
+    return afficherMdpProvisoire(nom,mdp);
+  }).catch(function(err){
+    toast((err&&err.code)?(err.code.indexOf('auth/')===0?messageAuth(err):describeSyncError(err)):((err&&err.message)||'Ajout impossible.'));
+  }).then(function(){renderEquipe();});
+}
+function reinitialiserMdp(m){
+  if(!peutGerer(m))return;
+  demanderConfirmation({
+    titre:'Mot de passe provisoire pour '+prenomDe(m.nom),
+    corps:'<p>Un nouveau mot de passe provisoire va être créé pour <strong>'+esc(m.nom)+'</strong>. '
+      +'L\'ancien cessera de fonctionner immédiatement, sur tous ses appareils.</p>'
+      +'<p>Son rôle (<strong>'+esc(ROLES[m.role].lib)+'</strong>) est conservé.</p>',
+    okLabel:'Créer le mot de passe'
+  }).then(function(ok){
+    if(!ok)return;
+    const mdp=motDePasseProvisoire();
+    toast('Création du mot de passe provisoire…');
+    creerCompteTechnique(m.nom,mdp).then(function(adresse){
+      const lot=firestoreDb.batch();
+      lot.set(firestoreDb.collection('membres').doc(adresse),{nom:m.nom,role:m.role,provisoire:true,majLe:Date.now(),majPar:signature()});
+      lot.delete(firestoreDb.collection('membres').doc(m.email));
+      lot.set(firestoreDb.collection('annuaire').doc(m.nom),{email:adresse});
+      return lot.commit();
+    }).then(function(){return afficherMdpProvisoire(m.nom,mdp);})
+      .catch(function(err){toast((err&&err.code&&err.code.indexOf('auth/')===0)?messageAuth(err):describeSyncError(err));});
+  });
+}
+function changerRole(m,role,sel){
+  if(!peutGerer(m)||rolesGeres().indexOf(role)<0||role===m.role)return;
+  demanderConfirmation({
+    titre:'Changer le rôle de '+prenomDe(m.nom),
+    corps:'<p><strong>'+esc(m.nom)+'</strong> passera de <strong>'+esc(ROLES[m.role].lib)+'</strong> à '
+      +'<strong>'+esc(ROLES[role].lib)+'</strong> : '+esc(ROLES[role].desc.toLowerCase())+'</p>',
+    okLabel:'Changer le rôle'
+  }).then(function(ok){
+    if(!ok){if(sel)sel.value=m.role;return;}
+    firestoreDb.collection('membres').doc(m.email).update({role:role,majLe:Date.now(),majPar:signature()})
+      .then(function(){toast(prenomDe(m.nom)+' : '+ROLES[role].lib+'.');})
+      .catch(function(err){if(sel)sel.value=m.role;toast(describeSyncError(err));});
+  });
+}
+function confirmerRetrait(m){
+  if(!peutGerer(m))return;
+  demanderConfirmation({
+    titre:'Retirer '+prenomDe(m.nom)+' de l\'équipe',
+    corps:'<p><strong>'+esc(m.nom)+'</strong> perdra immédiatement tout accès aux implantations, '
+      +'sur tous ses appareils. Les journées qu\'il a saisies restent en place.</p>',
+    okLabel:'Retirer de l\'équipe'
+  }).then(function(ok){
+    if(!ok)return;
+    const lot=firestoreDb.batch();
+    lot.delete(firestoreDb.collection('membres').doc(m.email));
+    lot.delete(firestoreDb.collection('annuaire').doc(m.nom));
+    lot.commit().then(function(){toast(prenomDe(m.nom)+' a été retiré de l\'équipe.');})
+      .catch(function(err){toast(describeSyncError(err));});
+  });
+}
+
 /* Une salle existe si son document de réglages a déjà été écrit : on évite
    ainsi qu'une faute de frappe dans le code ne crée une équipe vide. */
 function salleExiste(code){
@@ -5600,7 +6330,9 @@ function empreinte(s){
 }
 function joursDuMois(m){
   const o={};
-  Object.keys(journees).sort().forEach(function(iso){if(moisDe(iso)===m)o[iso]=journees[iso];});
+  /* un jour sans fiche n'est pas publié : il s'affiche de toute façon */
+  Object.keys(journees).sort().forEach(function(iso){
+    if(moisDe(iso)===m&&journees[iso]&&journees[iso].length)o[iso]=journees[iso];});
   return o;
 }
 function tousLesMois(){
@@ -5834,9 +6566,12 @@ function estRefusDroits(err){
 }
 /* Sauvegarder, restaurer et effacer agissent sur l'historique : ces actions
    n'ont pas leur place pour un compte qui ne peut rien modifier. */
+/* Restaurer et tout effacer remplacent l'historique de toute l'équipe : ces
+   deux gestes sont réservés à l'administrateur et à la responsable.
+   Exporter une copie reste ouvert à tous. */
 function majActionsSauvegarde(){
-  const z=$('actionsSauvegarde');
-  if(z)z.hidden=(lectureSeule===true);
+  const gestion=membreCourant?rolesGeres().length>0:(lectureSeule!==true);
+  ['btnRestaurer','btnToutEffacer2'].forEach(function(id){const el=$(id);if(el)el.hidden=!gestion;});
 }
 /* « Reprendre » et « Vider » agissent sur la journée : ils n'ont rien à faire
    sous les yeux d'un compte qui ne peut pas modifier. Les exports, eux,
@@ -6099,77 +6834,14 @@ function renderCarteSync(){
   /* la sous-collection mensuelle doit être autorisée explicitement */
   /* La liste des adresses est la seule barrière qui compte : le fichier et le
      code de salle circulent, pas les comptes. */
-  /* Modèle identique à firestore.rules dans le dépôt, noms d'exemple en plus. */
-  const regles=[
-    "rules_version = '2';",
-    "service cloud.firestore {",
-    "  match /databases/{db}/documents {",
-    "",
-    "    // qui peut saisir et corriger",
-    "    function redacteur() {",
-    "      return request.auth != null && request.auth.token.email in [",
-    "        'florian@"+DOMAINE_COMPTES+"',",
-    "        'marc@"+DOMAINE_COMPTES+"'",
-    "      ];",
-    "    }",
-    "",
-    "    // qui peut seulement consulter, imprimer et exporter",
-    "    function lecteur() {",
-    "      return request.auth != null && request.auth.token.email in [",
-    "        'direction@"+DOMAINE_COMPTES+"'",
-    "      ];",
-    "    }",
-    "",
-    "    function salleValide(salle) { return salle.matches('^[A-Z2-9]{8}$'); }",
-    "    function moisValide(mois) { return mois.matches('^[0-9]{4}-[0-9]{2}$'); }",
-    "",
-    "    // un mois ne peut être remplacé que par une révision strictement plus",
-    "    // récente : aucun appareil ne peut donc écraser une saisie qu'il n'a",
-    "    // pas encore vue, même après une longue coupure réseau",
-    "    function revisionEnAvance() {",
-    "      return !('rev' in resource.data) || request.resource.data.rev > resource.data.rev;",
-    "    }",
-    "",
-    "    // seuls les champs écrits par l'application sont acceptés",
-    "    function contenuMoisValide() {",
-    "      let d = request.resource.data;",
-    "      return d.keys().hasOnly(['jours', 'joursZ', 'v', 'rev', 'updatedAt', 'updatedBy'])",
-    "        && d.rev is int && d.rev >= 1;",
-    "    }",
-    "    function contenuSalleValide() {",
-    "      return request.resource.data.keys().hasOnly(",
-    "        ['reconduits', 'joursChomes', 'v', 'updatedAt', 'updatedBy', 'journees', 'journeesZ']);",
-    "    }",
-    "",
-    "    match /"+COLLECTION_SYNC+"/{salle} {",
-    "      allow read:           if (redacteur() || lecteur()) && salleValide(salle);",
-    "      allow create, update: if redacteur() && salleValide(salle) && contenuSalleValide();",
-    "      match /"+SOUS_MOIS+"/{mois} {",
-    "        allow read:   if (redacteur() || lecteur()) && salleValide(salle);",
-    "        allow create: if redacteur() && salleValide(salle) && moisValide(mois) && contenuMoisValide();",
-    "        allow update: if redacteur() && salleValide(salle) && moisValide(mois) && contenuMoisValide()",
-    "                      && revisionEnAvance();",
-    "      }",
-    "    }",
-    "  }",
-    "}"].join('\n');
-  const aideProjet='<details class="aide-pliante"><summary>Options développeur</summary>'
-    +'<div class="contenu">Dans la console Firebase du projet <strong>'+esc(activeFirebaseConfig().projectId)+'</strong> :'
-    +'<br>1. <strong>Authentication → Sign-in method</strong> → activer <strong>Adresse e-mail/Mot de passe</strong>, '
-    +'et désactiver <strong>Anonyme</strong>.'
-    +'<br>2. <strong>Authentication → Users</strong> → <em>Add user</em> pour chaque personne. '
-    +'Firebase réclame une adresse : écrivez <strong>prenom@'+DOMAINE_COMPTES+'</strong>, elle n\'est jamais montrée '
-    +'ni saisie — la personne se connecte avec <strong>prenom</strong> seulement. Mettez un mot de passe provisoire, '
-    +'communiquez-le de vive voix : elle le remplacera par le sien depuis « Changer mon mot de passe ». '
-    +'Retirer quelqu\'un se fait au même endroit, en supprimant son compte.'
-    +'<br>3. <strong>Firestore Database → Règles</strong> → coller ceci en remplaçant les listes par vos noms, puis publier. '
-    +'Ce sont ces listes qui font foi : un compte absent des deux n\'accède à rien, même avec le code. '
-    +'Un compte <em>lecteur</em> consulte, imprime et exporte, mais ne peut rien modifier — '
-    +'l\'application s\'en aperçoit seule à la connexion et masque la saisie. '
-    +'La règle sur la révision empêche aussi qu\'un appareil resté longtemps déconnecté n\'écrase '
-    +'par erreur des journées plus récentes en se reconnectant : c\'est elle qui protège vraiment, '
-    +'l\'application n\'étant qu\'un premier filtre.'
-    +'<div class="bloc-regles">'+esc(regles)+'</div></div></details>';
+  /* Les droits ne se règlent plus dans la console : ils suivent les rôles de
+     l'onglet Équipe, que les règles Firestore (firestore.rules) lisent. */
+  const aideProjet='<details class="aide-pliante"><summary>Comment les accès sont-ils gérés ?</summary>'
+    +'<div class="contenu">Chaque personne se connecte avec son propre compte. Ce qu\'elle peut faire dépend '
+    +'de son rôle, attribué dans l\'onglet <strong>Équipe</strong> par l\'administrateur ou la responsable : '
+    +'les règles de sécurité du projet <strong>'+esc(activeFirebaseConfig().projectId)+'</strong> le vérifient '
+    +'à chaque lecture et à chaque écriture. Le code de salle ne donne accès à rien sans un compte de l\'équipe.'
+    +'</div></details>';
 
   /* sans session (hors ligne), la synchronisation attend le retour du réseau */
   if(!utilisateur){
@@ -6554,6 +7226,11 @@ document.querySelectorAll('.sous-onglet').forEach(function(b){
     lireJour(svg,ev.clientX);
   }
   zone.addEventListener('pointerdown',lire);
+  /* un clic sur une case de la vue d'ensemble ouvre la journée */
+  zone.addEventListener('click',function(ev){
+    const b=ev.target.closest?ev.target.closest('.ve-case[data-jour]'):null;
+    if(b&&jourValide(b.dataset.jour))ouvrirJournee(b.dataset.jour);
+  });
   zone.addEventListener('pointermove',lire);
 })();
 document.getElementById('analyseDu').addEventListener('change',function(e){analyseDu=e.target.value;renderAnalyses();});
@@ -6572,9 +7249,10 @@ document.getElementById('btn30jours').addEventListener('click',function(){
 });
 document.getElementById('rechercheJour').addEventListener('input',renderHistorique);
 document.getElementById('allerAuJour').addEventListener('change',function(e){
-  if(!e.target.value)return;
-  if(!journees[e.target.value]){toast('Aucune journée enregistrée à cette date.');return;}
-  ouvrirJournee(e.target.value);
+  const iso=e.target.value;
+  if(!jourValide(iso))return;
+  if(iso>isoJour()){toast('Choisissez un jour passé ou aujourd\'hui.');return;}
+  ouvrirJournee(iso);
 });
 
 /* ---- réglages ---- */
@@ -6621,6 +7299,12 @@ window.addEventListener('online',function(){
   if(!utilisateur&&!authDemarree){authPrete=false;surveillerAuth();}
 });
 window.addEventListener('offline',majPuceSync);
+/* Fonctionnement hors ligne : le service worker (sw.js, à côté de ce fichier)
+   garde une copie de l'application et des scripts Firebase sur l'appareil. Il
+   n'est actif qu'en HTTPS (ou en local pour les essais). */
+if('serviceWorker' in navigator&&(location.protocol==='https:'||/^(localhost|127\.0\.0\.1)$/.test(location.hostname))){
+  navigator.serviceWorker.register('sw.js').catch(function(err){console.warn('Service worker :',err);});
+}
 /* L'écran de connexion se pose avant tout : rien de l'application ne doit
    apparaître, même un instant, avant le mot de passe. Un simple rechargement
    de la page, lui, ne redemande rien. */
