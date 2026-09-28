@@ -696,9 +696,12 @@ details.aide-pliante .contenu{font-size:.85rem;color:var(--encre-doux);margin-to
    mûrisseries :
      — un téléphone tenu d'une main sur le quai : onglets en bas de l'écran,
        cibles tactiles d'au moins 44 px, bouton Enregistrer toujours à portée ;
-     — un ordinateur au bureau : onglets en haut, saisie et plan côte à côte.
-   La couleur ne porte jamais seule une information : un mot ou une forme
-   l'accompagne toujours.
+     — un ordinateur au bureau : barre latérale de navigation, titre de page,
+       saisie et plan côte à côte.
+   Des neutres sobres, le vert de l'avocat pour les actions et la sélection,
+   et les teintes des modes de conservation réservées au plan : ce sont elles
+   qui portent l'information. La couleur ne la porte jamais seule : un mot ou
+   une forme l'accompagne toujours.
    Tout ce bloc est réservé à l'écran : la feuille imprimée, réglée au
    millimètre plus haut, ne change pas. Les retouches des cartes de chambre
    visent « #pane-jour » : le bloc de mesure de l'impression (#mesure), qui
@@ -710,158 +713,266 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
 
 @media screen{
   :root{
-    --fond:#F1F4F0;
-    --trait-2:#E3E8E1;
-    --encre-3:#5F6B62;
-    --vert:#2C5A38;
-    --vert-h:#234A2D;
-    --vert-teinte:#E5EFE7;
-    --anneau:0 0 0 3px rgba(44,90,56,.22);
-    --ombre-1:0 1px 2px rgba(16,26,18,.05);
-    --ombre-2:0 1px 3px rgba(16,26,18,.06),0 10px 24px -12px rgba(16,26,18,.18);
-    --ombre-3:0 16px 40px -10px rgba(16,26,18,.30);
-    --tete-h:62px;
-    --barre-h:66px;
+    /* neutres */
+    --fond:#F4F5F7;
+    --surface:#FFFFFF;
+    --surface-2:#F8F9FA;
+    --bord:#E4E7EB;
+    --bord-fort:#D1D5DB;
+    --texte:#111827;
+    --texte-2:#374151;
+    --texte-3:#6B7280;
+    /* marque */
+    --marque:#2C5A38;
+    --marque-h:#234A2D;
+    --marque-teinte:#EAF3EC;
+    --marque-texte:#1F4A2B;
+    --anneau:0 0 0 3px rgba(44,90,56,.20);
+    /* formes */
+    --r:14px;--r-moyen:10px;--r-petit:8px;
+    --ombre-1:0 1px 2px rgba(17,24,39,.05);
+    --ombre-2:0 1px 3px rgba(17,24,39,.06),0 8px 24px -12px rgba(17,24,39,.14);
+    --ombre-3:0 20px 48px -12px rgba(17,24,39,.28);
+    /* cadre */
+    --lateral:248px;
+    --tete-h:64px;
+    --barre-h:64px;
     --sur:env(safe-area-inset-bottom,0px);
+    /* anciennes variables ramenées vers les neutres, à l'écran seulement */
+    --papier:var(--fond);
+    --trait:var(--bord);
+    --trait-fin:#EEF0F3;
+    --gris:var(--texte-3);
+    --encre:var(--texte);
+    --encre-doux:var(--texte-2);
   }
-  body{background:var(--fond);padding:0}
-  .enveloppe{padding:0 16px 28px}
+  body{background:var(--fond);color:var(--texte);padding:0;font-size:15px}
+  .enveloppe{max-width:none;padding:0 16px 28px}
   :focus-visible{outline:none;box-shadow:var(--anneau);border-radius:8px}
+  ::selection{background:#CFE3D4}
 
-  /* ---------- barre du haut ---------- */
-  .entete{
-    position:sticky;top:0;z-index:45;
-    display:flex;align-items:center;gap:14px;
-    min-height:var(--tete-h);margin:0 -16px 14px;padding:10px 16px;
-    background:rgba(241,244,240,.92);color:var(--encre);
-    -webkit-backdrop-filter:saturate(1.5) blur(14px);backdrop-filter:saturate(1.5) blur(14px);
-    border-radius:0;border-bottom:1px solid var(--trait-2);box-shadow:none;
-  }
-  .marque{display:flex;align-items:center;gap:11px;min-width:0}
+  /* ---------- logo et avatar ---------- */
   .logo{
-    width:38px;height:38px;flex:0 0 38px;border-radius:11px;
+    width:36px;height:36px;flex:0 0 36px;border-radius:10px;
     display:inline-flex;align-items:center;justify-content:center;
-    background:linear-gradient(150deg,#3A7048,var(--avocat-fonce));color:#fff;
-    box-shadow:inset 0 -2px 0 rgba(0,0,0,.18),var(--ombre-1);
+    background:linear-gradient(150deg,#3E7A4C,#1C3D24);color:#fff;
+    box-shadow:inset 0 -2px 0 rgba(0,0,0,.16),0 2px 6px -2px rgba(28,61,36,.5);
   }
-  .logo .ico{width:22px;height:22px;stroke-width:1.8}
-  .marque-texte{min-width:0}
-  .entete .eyebrow{font-size:.66rem;letter-spacing:.12em;color:var(--gris);margin:0 0 1px}
+  .logo .ico{width:21px;height:21px;stroke-width:1.8}
+  .avatar{
+    width:34px;height:34px;flex:0 0 34px;border-radius:50%;
+    display:inline-grid;place-items:center;font-weight:700;font-size:14px;color:#fff;
+    background:linear-gradient(150deg,#4B8A5A,#244B2F);text-transform:uppercase;
+  }
+  .avatar.grand{width:48px;height:48px;flex-basis:48px;font-size:19px}
+
+  /* ---------- barre latérale (ordinateur) ---------- */
+  .barre-laterale .bl-marque,.barre-laterale .bl-pied{display:none}
+  .bl-nom small,.cx-nom small{font-size:11.5px;font-weight:550;letter-spacing:0;color:var(--texte-3);margin-top:2px;white-space:nowrap}
+  @media(min-width:1024px){
+    .barre-laterale{
+      position:fixed;left:0;top:0;bottom:0;z-index:40;width:var(--lateral);
+      display:flex;flex-direction:column;padding:18px 14px 16px;
+      background:var(--surface);border-right:1px solid var(--bord);
+    }
+    .barre-laterale .bl-marque{display:flex;align-items:center;gap:11px;padding:2px 8px 22px}
+    .bl-nom{display:flex;flex-direction:column;font-size:16px;font-weight:780;letter-spacing:-.015em;line-height:1.15}
+    .barre-laterale .onglets{
+      position:static;display:flex;flex-direction:column;gap:2px;max-width:none;
+      margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;
+      -webkit-backdrop-filter:none;backdrop-filter:none;
+    }
+    .barre-laterale .onglet{
+      position:relative;flex:0 0 auto;justify-content:flex-start;gap:12px;
+      min-height:42px;padding:0 12px;border-radius:10px;
+      font-size:.93rem;font-weight:620;color:var(--texte-2);background:none;box-shadow:none;
+    }
+    .barre-laterale .onglet .ico{width:20px;height:20px;color:var(--texte-3)}
+    .barre-laterale .onglet:hover{background:#F3F4F6;color:var(--texte)}
+    .barre-laterale .onglet[aria-selected="true"]{background:var(--marque-teinte);color:var(--marque-texte);box-shadow:none}
+    .barre-laterale .onglet[aria-selected="true"] .ico{color:var(--marque)}
+    .barre-laterale .onglet[aria-selected="true"]::before{
+      content:"";position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--marque);
+    }
+    .barre-laterale .onglet.archive .lib{color:#8A6212}
+    .barre-laterale .bl-pied{display:flex;flex-direction:column;gap:8px;margin-top:auto;padding-top:14px;border-top:1px solid var(--bord)}
+    .enveloppe{margin-left:var(--lateral);padding:0 32px 40px}
+  }
+  .bl-sync{
+    display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border:0;border-radius:10px;
+    background:none;text-align:left;cursor:pointer;font:inherit;color:var(--texte-2);
+  }
+  .bl-sync:hover{background:#F3F4F6}
+  .bl-sync .pt{width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:#9CA3AF;box-shadow:0 0 0 3px rgba(156,163,175,.18)}
+  .bl-sync.ok .pt{background:#16A34A;box-shadow:0 0 0 3px rgba(22,163,74,.16)}
+  .bl-sync.attente .pt{background:#F59E0B;box-shadow:0 0 0 3px rgba(245,158,11,.18)}
+  .bl-sync.erreur .pt{background:#DC2626;box-shadow:0 0 0 3px rgba(220,38,38,.16)}
+  .bl-sync.lecture .pt{background:#7C5A96;box-shadow:0 0 0 3px rgba(124,90,150,.16)}
+  .bl-sync .tx,.bl-compte .tx{display:flex;flex-direction:column;min-width:0}
+  .bl-sync b{font-size:13px;font-weight:650}
+  .bl-sync small,.bl-compte small{font-size:11.5px;color:var(--texte-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bl-utilisateur{display:flex;align-items:center;gap:6px}
+  .bl-compte{
+    flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:6px 8px;border:0;border-radius:11px;
+    background:none;text-align:left;cursor:pointer;font:inherit;color:var(--texte);
+  }
+  .bl-compte:hover{background:#F3F4F6}
+  .bl-compte b{font-size:13.5px;line-height:1.2}
+
+  /* ---------- en-tête de page ---------- */
+  .entete{
+    position:sticky;top:0;z-index:35;
+    display:flex;align-items:center;gap:12px;
+    min-height:var(--tete-h);margin:0 -16px 14px;padding:10px 16px;
+    background:rgba(244,245,247,.88);color:var(--texte);
+    -webkit-backdrop-filter:saturate(1.6) blur(14px);backdrop-filter:saturate(1.6) blur(14px);
+    border-radius:0;border-bottom:1px solid var(--bord);box-shadow:none;
+  }
+  .entete-titre{min-width:0;flex:1}
   .entete h1{
-    font-family:inherit;font-size:1.06rem;font-weight:750;letter-spacing:-.01em;line-height:1.2;
+    font-family:inherit;font-size:1.12rem;font-weight:760;letter-spacing:-.015em;line-height:1.2;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  .entete .jour{flex:1;min-width:0;margin:0;font-size:.8rem;color:var(--encre-3);line-height:1.4}
-  @media(max-width:899px){.entete .jour{display:none}}
-  @media(min-width:900px){
-    .entete{padding:10px 24px;margin:0 -24px 16px}
-    .entete h1{font-size:1.14rem}
+  .entete h1::first-letter{text-transform:none}
+  .entete p{margin:1px 0 0;font-size:.8rem;color:var(--texte-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .entete p::first-letter{text-transform:uppercase}
+  @media(min-width:1024px){
+    .entete{min-height:76px;margin:0 -32px 22px;padding:12px 32px}
+    .entete .logo,.entete .puce-sync{display:none}
+    .entete h1{font-size:1.5rem;letter-spacing:-.025em}
+    .entete p{font-size:.88rem;margin-top:3px}
   }
-  @media(min-width:900px){.enveloppe{padding:0 24px 32px}}
+  .d-court{display:none}
+  @media(max-width:520px){.d-long{display:none}.d-court{display:inline}.large-seul{display:none}}
 
-  /* pastille de synchronisation */
+  /* pastille de synchronisation (téléphone) */
   .puce-sync{
-    margin-left:auto;flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;
+    flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;
     height:32px;padding:0 12px;border-radius:999px;cursor:pointer;
-    font:inherit;font-size:.76rem;font-weight:650;white-space:nowrap;
-    border:1px solid var(--trait);background:var(--carte);color:var(--encre-doux);
-    transition:background .14s,border-color .14s;
+    font:inherit;font-size:.75rem;font-weight:650;white-space:nowrap;
+    border:1px solid var(--bord);background:var(--surface);color:var(--texte-2);
   }
   .puce-sync .ico{width:15px;height:15px}
-  .puce-sync.ok{background:#E7F3EA;border-color:#B9DAC1;color:#1F5A31}
-  .puce-sync.attente{background:#FFF4DD;border-color:#EDD29A;color:#7A560E}
-  .puce-sync.erreur{background:var(--alerte-pale);border-color:#E2BDB6;color:var(--alerte)}
-  .puce-sync.lecture{background:#EEE8F4;border-color:#D6C7E4;color:#553A69}
-  .puce-sync:hover{filter:brightness(.97)}
-  @media(max-width:420px){.puce-sync{padding:0 10px}.entete .eyebrow{display:none}}
+  .puce-sync.ok{background:#ECF7EF;border-color:#BFE0C8;color:#1F5A31}
+  .puce-sync.attente{background:#FFF7E6;border-color:#F2D9A2;color:#7A560E}
+  .puce-sync.erreur{background:#FDECEC;border-color:#F3C4C4;color:#9B1C1C}
+  .puce-sync.lecture{background:#F3EEF8;border-color:#DCCDE8;color:#553A69}
+  @media(max-width:400px){.puce-sync span{display:none}.puce-sync{padding:0 9px}}
 
-  /* ---------- onglets ---------- */
+  /* ---------- onglets en bas (téléphone, tablette) ---------- */
   .onglet{display:inline-flex;align-items:center;justify-content:center;gap:8px}
-  .onglet .ico{width:19px;height:19px}
-  @media(min-width:900px){
-    .onglets{top:calc(var(--tete-h) + 8px);max-width:560px;border-radius:13px;padding:4px;
-      background:rgba(233,238,231,.94);border-color:var(--trait-2)}
-    .onglet{padding:9px 12px;border-radius:10px}
-  }
-  /* Téléphone et tablette : les onglets passent en bas, à portée du pouce. */
-  @media(max-width:899px){
+  @media(max-width:1023px){
     body{padding-bottom:calc(var(--barre-h) + var(--sur) + 12px)}
     .onglets{
-      position:fixed;top:auto;left:0;right:0;bottom:0;z-index:50;margin:0;
-      gap:0;padding:6px 8px calc(6px + var(--sur));border-radius:0;
-      border:0;border-top:1px solid var(--trait-2);
-      background:rgba(255,255,255,.95);box-shadow:0 -6px 20px -14px rgba(16,26,18,.35);
+      position:fixed;top:auto;left:0;right:0;bottom:0;z-index:50;margin:0;max-width:none;
+      display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:0;
+      padding:6px 6px calc(6px + var(--sur));border-radius:0;
+      border:0;border-top:1px solid var(--bord);
+      background:rgba(255,255,255,.94);box-shadow:0 -6px 20px -14px rgba(17,24,39,.3);
+      -webkit-backdrop-filter:saturate(1.6) blur(16px);backdrop-filter:saturate(1.6) blur(16px);
     }
-    .onglet{flex-direction:column;gap:3px;padding:6px 4px 5px;font-size:.72rem;font-weight:650;border-radius:12px;background:none!important;box-shadow:none!important}
-    .onglet .ico{width:23px;height:23px;padding:3px 14px;box-sizing:content-box;border-radius:999px;transition:background .15s}
-    .onglet[aria-selected="true"]{color:var(--avocat-fonce)}
-    .onglet[aria-selected="true"] .ico{background:var(--vert-teinte)}
+    .onglet{flex-direction:column;gap:3px;padding:5px 2px 4px;font-size:.7rem;font-weight:650;color:var(--texte-3);
+      border-radius:12px;background:none!important;box-shadow:none!important;white-space:nowrap}
+    .onglet .ico{width:22px;height:22px;padding:3px 14px;box-sizing:content-box;border-radius:999px;transition:background .15s}
+    .onglet[aria-selected="true"]{color:var(--marque-texte)}
+    .onglet[aria-selected="true"] .ico{background:var(--marque-teinte);stroke-width:2.1}
     .onglet.archive[aria-selected="true"] .ico{background:#FBEFD5}
   }
 
-  /* ---------- résumé de la journée ---------- */
-  .resume{margin-bottom:14px}
-  .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
-  .stat{
-    background:var(--carte);border:1px solid var(--trait-2);border-radius:13px;
-    padding:10px 12px 9px;box-shadow:var(--ombre-1);display:flex;flex-direction:column;gap:1px;min-width:0;
+  /* ---------- navigation d'une journée à l'autre ---------- */
+  .nav-jour{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;
   }
-  .stat-val{font-size:1.42rem;font-weight:750;line-height:1.1;letter-spacing:-.02em;font-family:inherit}
-  .stat-val small{font-size:.62em;font-weight:650;color:var(--gris);margin-left:1px}
-  .stat-val.petit{font-size:.92rem;line-height:1.55;color:#7A560E}
-  .stat-lib{display:flex;align-items:center;gap:6px;font-size:.76rem;color:var(--encre-3);white-space:nowrap}
+  .nav-jour-lib{
+    display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 14px;
+    background:var(--surface);border:1px solid var(--bord);border-radius:10px;box-shadow:var(--ombre-1);
+    font-size:.9rem;color:var(--texte);
+  }
+  .nav-jour-lib .ico{width:17px;height:17px;color:var(--texte-3)}
+  .nav-jour-lib b::first-letter{text-transform:uppercase}
+  .nav-jour .jour-marque{font-size:.62rem}
+  @media(max-width:560px){
+    .nav-jour-lib{flex:1;min-width:0;justify-content:center;padding:0 10px;order:1}
+    .nav-jour-lib b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .nav-jour .ico-btn:first-child{order:0}
+    .nav-jour .ico-btn:not(:first-child){order:2}
+    .nav-jour .bouton.petit{order:3;flex:1 0 100%;margin-left:0}
+  }
+  .nav-jour .bouton.petit{margin-left:auto;min-height:36px}
+  .nav-jour .ico-btn:disabled{opacity:.4;cursor:default}
+
+  /* ---------- résumé de la journée ---------- */
+  .resume{margin-bottom:16px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:10px}
+  .stat{
+    background:var(--surface);border:1px solid var(--bord);border-radius:12px;
+    padding:11px 14px 10px;box-shadow:var(--ombre-1);display:flex;flex-direction:column;gap:2px;min-width:0;
+  }
+  .stat-val{font-size:1.5rem;font-weight:760;line-height:1.1;letter-spacing:-.025em;font-family:inherit;color:var(--texte)}
+  .stat-val small{font-size:.58em;font-weight:650;color:var(--texte-3);margin-left:1px}
+  .stat-val.petit{font-size:.92rem;line-height:1.65;color:#8A6212}
+  .stat-lib{display:flex;align-items:center;gap:6px;font-size:.76rem;font-weight:550;color:var(--texte-3);line-height:1.3}
   .stat .point{width:9px;height:9px;border-radius:50%;flex:0 0 9px}
-  .point.vide{background:#C3CBC1}
-  .stat.palettes{background:var(--vert-teinte);border-color:#C9DDCD}
-  /* sur téléphone, une seule rangée qui défile plutôt que trois lignes de tuiles */
+  .point.vide{background:#C9CED6}
+  .stat.palettes{background:var(--marque-teinte);border-color:#CBE0D0}
+  .stat.palettes .stat-lib{color:var(--marque-texte)}
   @media(max-width:699px){
-    .stats{display:flex;overflow-x:auto;scroll-snap-type:x proximity;margin:0 -16px;padding:2px 16px 4px;
-      scrollbar-width:none}
+    .stats{display:flex;overflow-x:auto;scroll-snap-type:x proximity;margin:0 -16px;padding:2px 16px 4px;scrollbar-width:none}
     .stats::-webkit-scrollbar{display:none}
-    .stat{flex:0 0 auto;min-width:92px;scroll-snap-align:start}
+    .stat{flex:0 0 auto;min-width:94px;scroll-snap-align:start}
   }
 
-  /* ---------- panneaux et étapes ---------- */
-  .panneau{border-radius:16px;border-color:var(--trait-2);box-shadow:var(--ombre-2);padding:18px}
+  /* ---------- panneaux ---------- */
+  .panneau{background:var(--surface);border:1px solid var(--bord);border-radius:var(--r);box-shadow:var(--ombre-2);padding:18px}
   @media(min-width:700px){.panneau{padding:22px}}
-  .etape{padding:20px 0;border-top-color:var(--trait-2)}
-  .etape>h2{font-size:1rem;gap:10px}
+  .panneau-tete{margin-bottom:16px}
+  .panneau-tete h2{font-size:1.02rem;font-weight:720;letter-spacing:-.01em}
+  .panneau-tete p{font-size:.84rem;color:var(--texte-3);margin-top:2px}
+  .etape{padding:20px 0;border-top-color:var(--trait-fin)}
+  .etape>h2{font-size:.98rem;font-weight:700;gap:10px}
   .rang{
-    min-width:26px;height:26px;padding:0 7px;border-radius:999px;
+    min-width:24px;height:24px;padding:0 7px;border-radius:999px;
     display:inline-flex;align-items:center;justify-content:center;
-    background:var(--vert);color:#fff;font-family:inherit;font-size:.76rem;
+    background:var(--marque);color:#fff;font-family:inherit;font-size:.74rem;
   }
-  .etiquette{font-size:.7rem;letter-spacing:.08em;color:var(--encre-3)}
+  .etiquette{font-size:.72rem;font-weight:650;letter-spacing:.04em;color:var(--texte-3)}
+  .aide{color:var(--texte-3)}
 
   /* rangée des chambres */
   .rail{gap:8px}
   .tuile{
-    height:66px;flex-direction:column;gap:2px;padding:0 2px 9px;border-radius:12px;
-    border-color:var(--trait);box-shadow:var(--ombre-1);
+    height:66px;flex-direction:column;gap:2px;padding:0 2px 9px;border-radius:11px;
+    border-color:var(--bord-fort);box-shadow:var(--ombre-1);background:var(--surface);
   }
-  .tuile .t-num{font-size:1.28rem;line-height:1}
+  .tuile:hover{border-color:var(--marque)}
+  .tuile .t-num{font-size:1.26rem;line-height:1}
   .tuile .t-sous{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    font-size:.64rem;font-weight:650;letter-spacing:.01em;color:var(--encre-3);
+    font-size:.64rem;font-weight:650;letter-spacing:.01em;color:var(--texte-3);
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
   .tuile.hs .t-sous{color:var(--alerte)}
   .tuile.requis .t-sous{color:var(--requis)}
+  .tuile[aria-pressed="true"]{background:var(--marque);border-color:var(--marque)}
   .tuile[aria-pressed="true"] .t-sous{color:rgba(255,255,255,.85)}
   .tuile::after{height:5px}
-  .legende{gap:4px 12px}
+  .legende{gap:4px 12px;color:var(--texte-3)}
 
-  /* champs */
+  /* ---------- champs ---------- */
   input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea{
-    min-height:44px;border-radius:11px;border-color:#D3DAD0;
+    min-height:44px;border-radius:var(--r-moyen);border-color:var(--bord-fort);background:var(--surface);color:var(--texte);
   }
-  input:focus,select:focus,textarea:focus{box-shadow:var(--anneau)}
+  input:hover,select:hover{border-color:#9CA3AF}
+  input:focus,select:focus,textarea:focus{border-color:var(--marque);box-shadow:var(--anneau)}
+  input::placeholder{color:#9CA3AF}
   .champ-icone{position:relative;display:block}
-  .champ-icone .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--gris);pointer-events:none}
+  .champ-icone .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--texte-3);pointer-events:none}
   .champ-icone input{padding-left:40px!important}
 
   /* cases à cocher en pastilles */
   .cases{gap:8px}
-  .case{min-height:42px;padding:8px 15px;border-color:#D3DAD0;box-shadow:var(--ombre-1)}
-  .case input{width:17px;height:17px}
+  .case{min-height:42px;padding:8px 15px;border-color:var(--bord-fort);background:var(--surface);box-shadow:var(--ombre-1)}
+  .case:hover{border-color:#9CA3AF}
+  .case:has(input:checked){border-color:var(--marque);background:var(--marque-teinte);color:var(--marque-texte)}
+  .case input{width:17px;height:17px;accent-color:var(--marque)}
   .choix-mode .case{padding-left:13px}
   .case.mode .point{width:10px;height:10px;border-radius:50%}
   .case.mode.froid:has(input:checked){border-color:var(--froid);background:#DCEBF3;color:#22414D}
@@ -871,137 +982,237 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
   .case.mode.chauffe input{accent-color:var(--mangue)}
 
   /* blocs de saisie */
-  .variete{border-radius:13px;border-color:var(--trait-2);background:#FBFCFA}
-  .bloc-origine{border-radius:12px;border-color:var(--trait-2)}
-  .saisie-calibre{border-radius:12px}
+  .variete{border-radius:12px;border-color:var(--bord);background:var(--surface-2)}
+  .bloc-origine{border-radius:11px;border-color:var(--bord);background:var(--surface)}
+  .saisie-calibre{border-radius:11px}
   .q input.qte{min-height:44px}
-  .ajout-proj{border-radius:12px;background:#F5F8F4;border-color:var(--trait-2)}
-  .avis,.erreurs{border-radius:11px}
+  .ajout-proj{border-radius:11px;background:var(--surface-2);border-color:var(--bord)}
+  .avis,.erreurs{border-radius:10px}
+  .echo{color:var(--marque)}
 
   /* ---------- boutons ---------- */
   .bouton{
     display:inline-flex;align-items:center;justify-content:center;gap:8px;
-    min-height:46px;border-radius:12px;padding:11px 18px;
+    min-height:44px;border-radius:var(--r-moyen);padding:10px 18px;font-weight:650;
+    background:var(--marque);border-color:var(--marque);
+    box-shadow:0 1px 2px rgba(17,24,39,.08),inset 0 1px 0 rgba(255,255,255,.08);
   }
+  .bouton:hover{background:var(--marque-h);border-color:var(--marque-h)}
   .bouton .ico{width:18px;height:18px}
-  .bouton.petit{min-height:38px;padding:7px 13px;border-radius:10px}
+  .bouton.petit{min-height:36px;padding:6px 13px;border-radius:9px;font-size:.86rem}
   .bouton.petit .ico{width:16px;height:16px}
-  .bouton.secondaire{box-shadow:var(--ombre-1)}
-  .lien{gap:6px;min-height:34px;padding:7px 13px}
+  .bouton.secondaire{background:var(--surface);color:var(--texte);border-color:var(--bord-fort);box-shadow:var(--ombre-1)}
+  .bouton.secondaire:hover{background:#F9FAFB;border-color:#9CA3AF;color:var(--texte)}
+  .lien{gap:6px;min-height:34px;padding:6px 12px;border-radius:9px;border-color:var(--bord-fort);color:var(--texte-2);background:var(--surface)}
+  .lien:hover{background:#F9FAFB;border-color:#9CA3AF;color:var(--texte)}
   .lien .ico{width:15px;height:15px}
-  .lien.accent{color:var(--avocat-fonce);border-color:#B9D2BF;background:#F4F9F5}
-  .lien.accent:hover{background:var(--vert-teinte);border-color:var(--avocat)}
+  .lien.accent{color:var(--marque-texte);border-color:#B9D2BF;background:#F4F9F5}
+  .lien.accent:hover{background:var(--marque-teinte);border-color:var(--marque)}
+  .lien.danger{color:#B42318;border-color:#F1C7C2}
+  .lien.danger:hover{background:#FEF3F2;border-color:#D92D20;color:#B42318}
   .ico-btn{
     width:36px;height:36px;flex:0 0 36px;padding:0;
     display:inline-flex;align-items:center;justify-content:center;
-    border:1px solid var(--trait);border-radius:10px;background:var(--carte);color:var(--encre-doux);
+    border:1px solid var(--bord-fort);border-radius:9px;background:var(--surface);color:var(--texte-2);
     cursor:pointer;transition:background .14s,border-color .14s,color .14s;
   }
   .ico-btn .ico{width:17px;height:17px}
-  .ico-btn:hover{background:#F2F6F1;border-color:#BFC7BB;color:var(--encre)}
-  .ico-btn.danger{color:var(--alerte)}
-  .ico-btn.danger:hover{background:var(--alerte-pale);border-color:var(--alerte)}
+  .ico-btn:hover{background:#F9FAFB;border-color:#9CA3AF;color:var(--texte)}
+  .ico-btn.danger{color:#B42318}
+  .ico-btn.danger:hover{background:#FEF3F2;border-color:#D92D20}
   .pousse{margin-left:auto}
 
   /* barre d'enregistrement : reste à portée pendant qu'on descend dans le
      formulaire, au-dessus des onglets sur téléphone */
   .colonne-saisie .barre-enregistrer{
     position:sticky;bottom:12px;z-index:6;
-    margin-top:18px;padding:10px;border:1px solid var(--trait-2);border-radius:15px;
+    margin-top:18px;padding:10px;border:1px solid var(--bord);border-radius:14px;
     background:rgba(255,255,255,.96);
     -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
     box-shadow:var(--ombre-3);
   }
-  .barre-enregistrer .bouton{flex:1 1 170px}
-  .barre-enregistrer #btnAnnuler{flex:0 1 auto}
-  @media(max-width:899px){
+  .barre-enregistrer .bouton{flex:1 1 170px;font-size:.95rem}
+  .barre-enregistrer #btnAnnuler{flex:0 1 auto;padding-left:16px;padding-right:16px}
+  @media(max-width:1023px){
     .colonne-saisie .barre-enregistrer{bottom:calc(var(--barre-h) + var(--sur) + 10px)}
   }
-  /* Sur ordinateur, la saisie reste en vue pendant qu'on parcourt le plan. */
-  @media(min-width:1080px){
+
+  /* ---------- disposition de l'onglet du jour ---------- */
+  #pane-jour .colonnes{grid-template-columns:1fr;gap:16px}
+  @media(min-width:1180px){
+    #pane-jour .colonnes{grid-template-columns:minmax(360px,420px) minmax(0,1fr);gap:20px}
+    /* la saisie reste en vue pendant qu'on parcourt le plan */
     #pane-jour .colonne-saisie{
-      position:sticky;top:calc(var(--tete-h) + 70px);
-      max-height:calc(100vh - var(--tete-h) - 86px);overflow:auto;overscroll-behavior:contain;
+      position:sticky;top:98px;
+      max-height:calc(100vh - 112px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;
     }
     #pane-jour .colonne-saisie .barre-enregistrer{bottom:0}
   }
+  #pane-jour .colonnes.pleine-largeur{grid-template-columns:1fr!important}
+  #pane-jour .plan{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
 
   /* bandeaux */
-  .bandeau-histo,.bandeau-modif{border-radius:12px;padding:11px 14px}
-  .verrou{border-radius:15px;border-left:4px solid #D9A441;box-shadow:var(--ombre-2)}
+  .bandeau-histo,.bandeau-modif{border-radius:11px;padding:11px 14px}
+  .bandeau-modif{background:var(--marque-teinte);border-color:#B9D2BF}
+  .verrou{border-radius:var(--r);border-left:4px solid #D9A441;box-shadow:var(--ombre-2)}
   .verrou .bouton{min-height:42px}
 
   /* ---------- plan du jour ---------- */
-  .exports{justify-content:space-between;gap:10px;margin-bottom:18px}
+  .exports{justify-content:space-between;gap:10px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--trait-fin)}
   .groupe-exports,.groupe-jour{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
   @media(max-width:560px){
     .groupe-exports{width:100%}
-    .groupe-exports .bouton{flex:1 1 0;padding:7px 8px}
+    .groupe-exports .bouton{flex:1 1 0;padding:6px 8px}
   }
-  .plan-tete h2{font-size:1.12rem}
-  #pane-jour .chambre{border-radius:13px}
+  .plan-tete h2{font-size:1.08rem;font-weight:720}
+  .plan-tete .sous{color:var(--texte-3)}
+  #pane-jour .chambre{border-radius:12px}
   #pane-jour .chambre-tete .droite{align-items:center;gap:8px}
   .actions-carte{display:inline-flex;gap:6px}
-  #pane-jour .chambre-tete .ico-btn{width:32px;height:32px;flex-basis:32px;border-radius:9px}
-  #pane-jour .chambre.inoccupee{background:rgba(255,255,255,.7)}
+  #pane-jour .chambre-tete .ico-btn{width:32px;height:32px;flex-basis:32px;border-radius:8px;border-color:rgba(17,24,39,.14)}
+  #pane-jour .chambre.inoccupee{background:rgba(255,255,255,.75);border-color:var(--bord-fort)}
 
-  /* ---------- historique ---------- */
-  .sous-onglets{
-    display:inline-flex;gap:4px;padding:4px;margin-bottom:18px;border:1px solid var(--trait-2);
-    border-radius:13px;background:#EAEFE8;
-  }
-  .sous-onglet{
-    display:inline-flex;align-items:center;gap:7px;
-    padding:8px 16px;margin:0;border:0;border-radius:10px;
-  }
-  .sous-onglet .ico{width:17px;height:17px}
-  .sous-onglet[aria-selected="true"]{background:var(--carte);box-shadow:var(--ombre-1);border-bottom-color:transparent}
-  .jour-ligne{border-radius:14px;border-color:var(--trait-2);padding:14px 16px;box-shadow:var(--ombre-1)}
-  .jour-ligne.aujourdhui{border-left-width:4px}
-  .jour-actions .bouton .ico{order:0}
+  /* ---------- historique et analyses ---------- */
+  #vue-jours>h2,#vue-analyses>h2{display:none}
+  #pane-histo>.panneau{padding:22px}
+  .jour-ligne{border-radius:12px;border-color:var(--bord);padding:14px 16px;box-shadow:var(--ombre-1);background:var(--surface)}
+  .jour-ligne:hover{border-color:var(--bord-fort)}
+  .jour-ligne.aujourdhui{border-left-width:4px;border-color:var(--marque);background:linear-gradient(180deg,var(--marque-teinte),#fff 70%)}
+  .jour-marque{background:var(--marque)}
   .jour-actions .bouton:first-child .ico{order:1}
-  .carte-analyse{border-radius:13px;border-color:var(--trait-2)}
+  .carte-analyse{border-radius:12px;border-color:var(--bord)}
+  .recherche .lien{min-height:44px}
 
   /* ---------- réglages ---------- */
-  .carte-reglage{border-radius:15px;border-color:var(--trait-2);box-shadow:var(--ombre-1)}
-  .carte-reglage h3{gap:11px}
+  #pane-reglages>.panneau{background:none;border:0;box-shadow:none;padding:0;max-width:880px}
+  .carte-reglage{border-radius:var(--r);border-color:var(--bord);box-shadow:var(--ombre-1);padding:20px 22px}
+  .carte-reglage h3{gap:11px;font-size:1rem;font-weight:720}
   .ico-carte{
     width:34px;height:34px;flex:0 0 34px;border-radius:10px;
     display:inline-flex;align-items:center;justify-content:center;
-    background:var(--vert-teinte);color:var(--avocat-fonce);
+    background:var(--marque-teinte);color:var(--marque);
   }
   .ico-carte .ico{width:18px;height:18px}
   .carte-reglage h3 .pastille-etat{margin-left:auto}
-  .carte-reglage .desc{padding-left:45px}
+  .carte-reglage .desc{padding-left:45px;color:var(--texte-2)}
   @media(max-width:560px){.carte-reglage .desc{padding-left:0}}
+  .compte-tete{display:flex;align-items:center;gap:14px;margin-top:6px}
+  .compte-tete b{display:block;font-size:1.05rem}
+  .compte-tete small{display:block;font-size:.82rem;color:var(--texte-3)}
+  .actions-compte{gap:8px;margin-top:16px}
+  .actions-compte .lien,.actions-compte .bouton{margin:0}
+  .ligne-info{border-bottom-color:var(--trait-fin)}
 
   /* ---------- fenêtre de confirmation ---------- */
-  .modale-boite{border-radius:18px;box-shadow:var(--ombre-3)}
-  .modale-actions .bouton{min-height:46px}
-  /* sur téléphone, elle monte du bas de l'écran, sous le pouce */
+  .modale{background:rgba(17,24,39,.45);backdrop-filter:blur(3px)}
+  .modale-boite{border-radius:16px;box-shadow:var(--ombre-3);padding:24px}
+  .modale-actions .bouton{min-height:44px}
   @media(max-width:600px){
     .modale{align-items:flex-end;padding:0}
     .modale-boite{max-width:none;border-radius:20px 20px 0 0;padding:22px 18px calc(18px + var(--sur));
       max-height:88vh;animation:monte .22s ease}
     .modale-boite::before{content:"";display:block;width:40px;height:4px;border-radius:2px;
-      background:#D3DAD0;margin:-8px auto 14px}
+      background:var(--bord-fort);margin:-8px auto 14px}
     @keyframes monte{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
   }
 
-  /* notification : sur téléphone, en haut, sous la barre, pour ne jamais
-     masquer le bouton Enregistrer */
-  #toast{border-radius:12px;box-shadow:var(--ombre-3)}
-  @media(max-width:899px){
+  /* notification */
+  #toast{border-radius:11px;box-shadow:var(--ombre-3);background:#111827}
+  @media(max-width:1023px){
     #toast{top:calc(var(--tete-h) + 10px);bottom:auto;transform:translateX(-50%) translateY(-10px)}
     #toast.visible{transform:translateX(-50%) translateY(0)}
   }
-  .d-court{display:none}
-  @media(max-width:520px){.d-long{display:none}.d-court{display:inline}.large-seul{display:none}}
-  .barre-enregistrer .bouton{font-size:.95rem}
-  .barre-enregistrer #btnAnnuler{padding-left:16px;padding-right:16px}
-  /* réglages : des cartes posées sur le fond, sans panneau autour */
-  #pane-reglages>.panneau{background:none;border:0;box-shadow:none;padding:0;max-width:880px}
-  #pane-reglages .carte-reglage{padding:18px 20px}
+  @media(min-width:1024px){#toast{left:calc(50% + var(--lateral) / 2)}}
+
+  /* =========================== CONNEXION =========================== */
+  .connexion{
+    position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;
+    overflow-y:auto;overscroll-behavior:contain;background:var(--fond);
+  }
+  .connexion[hidden]{display:none}
+  body.verrouille{overflow:hidden}
+  body.verrouille .barre-laterale,body.verrouille .enveloppe,body.verrouille #toast{visibility:hidden}
+  .cx-cote{display:none}
+  .cx-zone{
+    flex:1 0 auto;display:flex;flex-direction:column;justify-content:center;
+    width:100%;max-width:440px;margin:0 auto;padding:7vh 20px 28px;
+  }
+  .cx-logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:26px}
+  .cx-logo .logo{width:48px;height:48px;flex-basis:48px;border-radius:14px}
+  .cx-logo .logo .ico{width:28px;height:28px}
+  .cx-nom{display:flex;flex-direction:column;font-size:1.45rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+  .cx-nom small{font-size:12.5px}
+  .cx-carte{
+    background:var(--surface);border:1px solid var(--bord);border-radius:18px;
+    padding:26px 24px 22px;box-shadow:var(--ombre-2);
+  }
+  .cx-carte h2{font-size:1.38rem;font-weight:760;letter-spacing:-.025em}
+  .cx-intro{font-size:.9rem;color:var(--texte-3);margin:4px 0 20px;line-height:1.5}
+  .cx-champ{margin-bottom:14px}
+  .cx-champ label{display:block;font-size:.83rem;font-weight:650;color:var(--texte-2);margin-bottom:6px}
+  .cx-champ input{font-size:16px!important}
+  .cx-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;text-align:center;
+    letter-spacing:.24em;font-size:1.25rem!important;font-weight:700}
+  .cx-code::placeholder{text-transform:none;letter-spacing:.02em;font-size:1rem;font-weight:400}
+  .cx-principal{width:100%;min-height:48px;margin-top:6px;font-size:1rem}
+  .cx-liens{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 14px;margin-top:16px}
+  .cx-liens.centre{justify-content:center}
+  .cx-lien{
+    display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:4px 0;cursor:pointer;
+    font:inherit;font-size:.86rem;font-weight:650;color:var(--marque);
+  }
+  .cx-lien:hover{color:var(--marque-h);text-decoration:underline;text-underline-offset:3px}
+  .cx-lien .ico{width:15px;height:15px}
+  .cx-erreur,.cx-note{
+    display:flex;gap:10px;align-items:flex-start;border-radius:11px;padding:11px 13px;margin:0 0 16px;
+    font-size:.87rem;line-height:1.45;
+  }
+  .cx-erreur{background:#FEF3F2;border:1px solid #FECDCA;color:#B42318}
+  .cx-note{background:#FFF7E6;border:1px solid #F2D9A2;color:#7A560E}
+  .cx-erreur .ico,.cx-note .ico{width:18px;height:18px;margin-top:1px}
+  .cx-compte{
+    display:flex;align-items:center;gap:12px;padding:10px 12px;margin-bottom:16px;
+    background:var(--surface-2);border:1px solid var(--bord);border-radius:12px;
+  }
+  .cx-compte b{display:block;font-size:.97rem}
+  .cx-compte small{display:block;font-size:.78rem;color:var(--texte-3)}
+  .cx-attente{display:flex;flex-direction:column;align-items:center;gap:14px;padding:28px 0 18px;color:var(--texte-3)}
+  .cx-etapes{margin:0 0 20px;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:.9rem;line-height:1.5;color:var(--texte-2)}
+  .cx-etapes li::marker{font-weight:700;color:var(--marque)}
+  .cx-separateur{display:flex;align-items:center;gap:12px;margin:16px 0 10px;color:var(--texte-3);font-size:.8rem}
+  .cx-separateur::before,.cx-separateur::after{content:"";flex:1;height:1px;background:var(--bord)}
+  .cx-mention{text-align:center;font-size:.76rem;color:var(--texte-3);margin-top:20px}
+  .roue{
+    display:inline-block;width:17px;height:17px;border-radius:50%;
+    border:2.5px solid currentColor;border-right-color:transparent;animation:tourne .7s linear infinite;
+  }
+  .roue.grande{width:32px;height:32px;border-width:3px;color:var(--marque)}
+  @keyframes tourne{to{transform:rotate(360deg)}}
+  @media(min-width:1024px){
+    .connexion{flex-direction:row}
+    .cx-cote{
+      position:relative;overflow:hidden;display:flex;align-items:center;flex:1 1 50%;max-width:720px;
+      padding:56px 64px;color:#fff;
+      background:radial-gradient(120% 90% at 0% 0%,#4F8A5B 0%,#2C5A38 46%,#1C3D24 100%);
+    }
+    /* deux cercles très pâles : du relief sans image à charger */
+    .cx-cote::before,.cx-cote::after{content:"";position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.10)}
+    .cx-cote::before{width:520px;height:520px;right:-200px;bottom:-180px;background:rgba(255,255,255,.04)}
+    .cx-cote::after{width:300px;height:300px;right:-60px;bottom:-40px}
+    .cx-cote-in{position:relative;max-width:470px}
+    .cx-marque{
+      display:grid;place-items:center;width:72px;height:72px;border-radius:22px;background:#fff;color:var(--marque);
+      box-shadow:0 12px 32px -10px rgba(0,0,0,.45);
+    }
+    .cx-marque .ico{width:42px;height:42px;stroke-width:1.7}
+    .cx-titre-cote{font-size:2.5rem;line-height:1.08;letter-spacing:-.035em;margin:30px 0 30px;font-weight:820}
+    .cx-cote ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:18px}
+    .cx-cote li{display:flex;gap:14px;align-items:flex-start;font-size:1.02rem;font-weight:560;line-height:1.45;color:rgba(255,255,255,.92)}
+    .cx-cote li .ico{width:22px;height:22px;flex:0 0 22px;margin-top:1px;stroke-width:2;color:#BFE3C8}
+    .cx-zone{flex:1 1 50%;max-width:none;padding:40px 48px}
+    .cx-zone>*{width:100%;max-width:400px;margin-left:auto;margin-right:auto}
+    .cx-logo{justify-content:flex-start}
+  }
 }
 </style>
 </head>
@@ -1037,34 +1248,77 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
   <symbol id="i-liste" viewBox="0 0 24 24"><path d="M9 6h11.5M9 12h11.5M9 18h11.5M4 6h.01M4 12h.01M4 18h.01"/></symbol>
   <symbol id="i-retour" viewBox="0 0 24 24"><path d="M19.5 12h-15M10.5 6l-6 6 6 6"/></symbol>
   <symbol id="i-ouvrir" viewBox="0 0 24 24"><path d="M9 5.5 15.5 12 9 18.5"/></symbol>
+  <symbol id="i-precedent" viewBox="0 0 24 24"><path d="M15 5.5 8.5 12 15 18.5"/></symbol>
 </svg>
+<!-- ============ ÉCRAN DE CONNEXION ============
+     Recouvre l'application sans la défaire : une saisie en cours attend
+     dessous. Son contenu est dessiné par renderConnexion(). -->
+<div class="connexion noprint" id="ecranConnexion" role="dialog" aria-modal="true" aria-labelledby="cxTitre" hidden>
+  <aside class="cx-cote" aria-hidden="true">
+    <div class="cx-cote-in">
+      <span class="cx-marque"><svg class="ico"><use href="#i-avocat"/></svg></span>
+      <p class="cx-titre-cote">L'implantation des mûrisseries, au quotidien.</p>
+      <ul>
+        <li><svg class="ico"><use href="#i-jour"/></svg><span>Le plan des huit chambres, prêt à imprimer et à afficher</span></li>
+        <li><svg class="ico"><use href="#i-nuage"/></svg><span>Toute l'équipe synchronisée, du bureau au quai</span></li>
+        <li><svg class="ico"><use href="#i-courbe"/></svg><span>Historique, recherche et courbes de température</span></li>
+        <li><svg class="ico"><use href="#i-cadenas"/></svg><span>Un compte par personne — la saisie continue hors réseau</span></li>
+      </ul>
+    </div>
+  </aside>
+  <main class="cx-zone">
+    <div class="cx-logo">
+      <span class="logo" aria-hidden="true"><svg class="ico"><use href="#i-avocat"/></svg></span>
+      <span class="cx-nom">Mûrisserie<small>Recettes et implantation</small></span>
+    </div>
+    <div class="cx-carte" id="cxCarte"></div>
+    <p class="cx-mention">Application interne · accès réservé aux comptes autorisés</p>
+  </main>
+</div>
+
+<!-- ============ NAVIGATION ============
+     Ordinateur : barre latérale fixe. Téléphone : seuls les onglets restent,
+     en bas de l'écran. -->
+<aside class="barre-laterale noprint">
+  <div class="bl-marque">
+    <span class="logo" aria-hidden="true"><svg class="ico"><use href="#i-avocat"/></svg></span>
+    <span class="bl-nom">Mûrisserie<small>Recettes et implantation</small></span>
+  </div>
+  <nav class="onglets" role="tablist" aria-label="Sections de l'application">
+    <button type="button" class="onglet" role="tab" data-onglet="jour" aria-selected="true"><svg class="ico" aria-hidden="true"><use href="#i-jour"/></svg><span class="lib">Aujourd'hui</span></button>
+    <button type="button" class="onglet" role="tab" data-onglet="histo" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-histo"/></svg><span class="lib">Historique</span></button>
+    <button type="button" class="onglet" role="tab" data-onglet="analyses" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-courbe"/></svg><span class="lib">Analyses</span></button>
+    <button type="button" class="onglet" role="tab" data-onglet="reglages" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-reglages"/></svg><span class="lib">Réglages</span></button>
+  </nav>
+  <div class="bl-pied">
+    <button type="button" class="bl-sync" id="blSync"></button>
+    <div class="bl-utilisateur" id="blUtilisateur"></div>
+  </div>
+</aside>
+
 <div class="enveloppe">
 
   <header class="entete noprint">
-    <div class="marque">
-      <span class="logo" aria-hidden="true"><svg class="ico"><use href="#i-avocat"/></svg></span>
-      <div class="marque-texte">
-        <p class="eyebrow">Recettes de mûrisserie</p>
-        <h1 id="dateDuJour"></h1>
-      </div>
+    <span class="logo" aria-hidden="true"><svg class="ico"><use href="#i-avocat"/></svg></span>
+    <div class="entete-titre">
+      <h1 id="titrePage">Aujourd'hui</h1>
+      <p id="sousTitrePage"></p>
     </div>
-    <p class="jour" id="etatDuJour"></p>
     <button type="button" class="puce-sync" id="puceSync" hidden></button>
   </header>
 
-  <nav class="onglets noprint" role="tablist" aria-label="Sections de l'application">
-    <button type="button" class="onglet" role="tab" data-onglet="jour" aria-selected="true"><svg class="ico" aria-hidden="true"><use href="#i-jour"/></svg><span class="lib">Aujourd'hui</span></button>
-    <button type="button" class="onglet" role="tab" data-onglet="histo" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-histo"/></svg><span class="lib">Historique</span></button>
-    <button type="button" class="onglet" role="tab" data-onglet="reglages" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-reglages"/></svg><span class="lib">Réglages</span></button>
-  </nav>
-
   <div class="pane" id="pane-jour">
+  <div class="nav-jour noprint" id="navJour"></div>
   <div class="resume noprint" id="resumeJour"></div>
   <div id="zoneVerrou" hidden></div>
   <div class="colonnes">
 
     <!-- ============ SAISIE ============ -->
     <section class="panneau colonne-saisie">
+      <div class="panneau-tete">
+        <h2>Saisie d'une chambre</h2>
+        <p>Choisissez une mûrisserie, décrivez son contenu, puis enregistrez.</p>
+      </div>
       <div id="bandeaux"></div>
 
       <div class="etape">
@@ -1161,7 +1415,7 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
     <section class="panneau colonne-plan">
       <div class="exports noprint">
         <div class="groupe-exports">
-          <button type="button" class="bouton secondaire petit" id="btnPdf"><svg class="ico" aria-hidden="true"><use href="#i-imprimer"/></svg>Imprimer<span class="large-seul">&nbsp;/ PDF</span></button>
+          <button type="button" class="bouton secondaire petit" id="btnPdf"><svg class="ico" aria-hidden="true"><use href="#i-imprimer"/></svg><span>Imprimer<span class="large-seul"> / PDF</span></span></button>
           <button type="button" class="bouton secondaire petit" id="btnExcel"><svg class="ico" aria-hidden="true"><use href="#i-excel"/></svg>Excel</button>
           <button type="button" class="bouton secondaire petit" id="btnWord"><svg class="ico" aria-hidden="true"><use href="#i-word"/></svg>Word</button>
         </div>
@@ -1186,11 +1440,6 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
 
   <div class="pane" id="pane-histo" hidden>
     <section class="panneau">
-      <div class="sous-onglets noprint" role="tablist">
-        <button type="button" class="sous-onglet" role="tab" data-vue="jours" aria-selected="true"><svg class="ico" aria-hidden="true"><use href="#i-liste"/></svg>Journées</button>
-        <button type="button" class="sous-onglet" role="tab" data-vue="analyses" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-courbe"/></svg>Analyses</button>
-      </div>
-
       <div id="vue-jours">
         <h2 style="font-size:1.05rem;margin-bottom:4px">Historique des journées</h2>
         <p class="aide" style="margin:0 0 16px">Consultez, réexportez ou reprenez une journée passée. La recherche porte aussi sur le contenu : variété, origine, marque, note. Les journées archivées s'ouvrent en lecture seule.</p>
@@ -1229,6 +1478,11 @@ svg.ico{width:1.15em;height:1.15em;flex:0 0 auto;fill:none;stroke:currentColor;s
 
   <div class="pane" id="pane-reglages" hidden>
     <section class="panneau">
+
+      <div class="carte-reglage" id="carteCompte">
+        <h3><span class="ico-carte" aria-hidden="true"><svg class="ico"><use href="#i-utilisateur"/></svg></span>Mon compte</h3>
+        <div id="compteContenu"></div>
+      </div>
 
       <div class="carte-reglage">
         <h3><span class="ico-carte" aria-hidden="true"><svg class="ico"><use href="#i-nuage"/></svg></span>Synchronisation entre appareils<span class="pastille-etat" id="pastilleSync"></span></h3>
@@ -1873,11 +2127,7 @@ function toast(msg){
 
 /* ================= JOURNEES ================= */
 function renderJournees(){
-  /* deux formes de la date : la longue, et une courte pour les petits écrans */
-  const court=dateDe(isoJour()).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
-  document.getElementById('dateDuJour').innerHTML='<span class="d-long">'+esc(jourLong(isoJour()))+'</span>'
-    +'<span class="d-court">'+esc(court)+'</span>';
-  document.getElementById('etatDuJour').textContent=phraseDuJour(isoJour());
+  majEntete();renderNavJour();
   document.getElementById('sousTitrePlan').textContent=jourLong(jourActif);
   const na=document.getElementById('noteAuto');
   if(na){
@@ -1907,8 +2157,10 @@ function renderResume(){
   if(b.requis)t(b.requis,'réquisitionnée'+(b.requis>1?'s':''),'requis');
   if(b.horsService)t(b.horsService,'à l\'arrêt','hs');
   if(b.vides)t(b.vides,'vide'+(b.vides>1?'s':''),'vide');
-  const pal=b.inc>0?'<span class="stat-val petit">à confirmer</span>':'<span class="stat-val num">'+b.total+'</span>';
-  tuiles.push('<div class="stat palettes">'+pal+'<span class="stat-lib">palette'+(b.total>1?'s':'')+'</span></div>');
+  /* un total n'est donné que si toutes les quantités sont connues */
+  tuiles.push(b.inc>0
+    ?'<div class="stat palettes"><span class="stat-val">–</span><span class="stat-lib">palettes à confirmer</span></div>'
+    :'<div class="stat palettes"><span class="stat-val num">'+b.total+'</span><span class="stat-lib">palette'+(b.total>1?'s':'')+'</span></div>');
   hote.innerHTML='<div class="stats">'+tuiles.join('')+'</div>';
 }
 /* Pastille d'état de la synchronisation, en haut de l'écran : tant qu'elle ne
@@ -1916,23 +2168,122 @@ function renderResume(){
 function majPuceSync(){
   const p=document.getElementById('puceSync');
   if(!p)return;
-  let ton='neutre',txt='Sur cet appareil',icone='telephone';
+  let ton='neutre',txt='Sur cet appareil',icone='telephone',detail='Synchronisation désactivée';
   if(syncCode){
+    detail='Équipe '+syncCode;
     if(typeof navigator!=='undefined'&&navigator.onLine===false){ton='attente';txt='Hors ligne';icone='nuage';}
-    else if(authPrete&&!utilisateur){ton='attente';txt='Connexion requise';icone='utilisateur';}
+    else if(!utilisateur){ton='attente';txt=authPrete?'Hors ligne':'Connexion…';icone='nuage';}
     else if(syncStatus==='error'){ton='erreur';txt='Erreur de synchro';icone='nuage';}
     else if(syncStatus==='connecting'||(syncStatus==='on'&&!receptionFaite)){ton='attente';txt='Connexion…';icone='nuage';}
     else if(syncStatus==='on'){
       if(lectureSeule===true){ton='lecture';txt='Lecture seule';icone='cadenas';}
       else{ton='ok';txt='Synchronisé';icone='nuage';}
+      if(syncDerniereReception||syncLastPushAt){
+        const t=Math.max(syncDerniereReception||0,syncLastPushAt||0);
+        detail+=' · '+new Date(t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      }
     }
   }
   p.className='puce-sync '+ton;
   p.innerHTML=ico(icone)+'<span>'+txt+'</span>';
   p.title=txt+' — ouvrir les réglages de synchronisation';
   p.hidden=false;
+  /* même information dans la barre latérale, sur ordinateur */
+  const b=document.getElementById('blSync');
+  if(b){
+    b.className='bl-sync '+ton;
+    b.innerHTML='<span class="pt" aria-hidden="true"></span><span class="tx"><b>'+txt+'</b><small>'+esc(detail)+'</small></span>';
+    b.title='Ouvrir les réglages de synchronisation';
+  }
 }
-/* Le lecteur doit savoir que cette feuille n'a pas été saisie par quelqu'un :
+/* Qui est connecté : carte de la barre latérale et carte « Mon compte ». */
+function roleCompte(){
+  return lectureSeule===true?'Lecture seule':(lectureSeule===false?'Saisie autorisée':(syncCode?'Droits en cours de vérification':'Compte de l\'équipe'));
+}
+function majIdentite(){
+  const c=compteConnu();
+  const hote=document.getElementById('blUtilisateur');
+  if(hote){
+    hote.innerHTML=c
+      ?'<button type="button" class="bl-compte" id="blCompte" title="Mon compte"><span class="avatar">'+esc(prenomDe(c.nom).charAt(0))+'</span>'
+        +'<span class="tx"><b>'+esc(prenomDe(c.nom))+'</b><small>'+esc(roleCompte())+'</small></span></button>'
+        +'<button type="button" class="ico-btn" id="blVerrouiller" title="Verrouiller" aria-label="Verrouiller l\'application">'+ico('cadenas')+'</button>'
+      :'';
+    const a=document.getElementById('blCompte');
+    if(a)a.addEventListener('click',function(){ouvrirOnglet('reglages');});
+    const v=document.getElementById('blVerrouiller');
+    if(v)v.addEventListener('click',function(){verrouiller('deverrouillage');});
+  }
+  renderCarteCompte();
+}
+function renderCarteCompte(){
+  const hote=document.getElementById('compteContenu');
+  if(!hote)return;
+  const c=compteConnu();
+  if(!c){hote.innerHTML='<p class="desc" style="padding:0">Aucun compte connecté.</p>';return;}
+  hote.innerHTML='<div class="compte-tete"><span class="avatar grand">'+esc(prenomDe(c.nom).charAt(0))+'</span>'
+    +'<span><b>'+esc(c.nom)+'</b><small>'+esc(roleCompte())+(c.enLigne?'':' · hors ligne')+'</small></span></div>'
+    +'<p class="desc" style="padding:0;margin:12px 0 0">Le mot de passe est demandé à chaque ouverture de l\'application '
+    +'et après dix minutes en arrière-plan.</p>'
+    +'<div class="actions-compte">'
+    +(c.enLigne?'<button type="button" class="bouton secondaire petit" id="btnChangerMdp">'+ico('cadenas')+'Changer mon mot de passe</button>':'')
+    +'<button type="button" class="bouton secondaire petit" id="btnVerrouiller">'+ico('cadenas')+'Verrouiller maintenant</button>'
+    +(c.enLigne?'<button type="button" class="lien danger" id="btnSeDeconnecter">Se déconnecter</button>':'')
+    +'</div>';
+  brancherCompte();
+  const v=document.getElementById('btnVerrouiller');
+  if(v)v.addEventListener('click',function(){verrouiller('deverrouillage');});
+}
+/* Titre de la page affichée, en tête d'écran. */
+function majEntete(){
+  const t=document.getElementById('titrePage'),st=document.getElementById('sousTitrePage');
+  if(!t)return;
+  let titre='',sous='';
+  if(ongletActif==='jour'){
+    const archive=(jourActif!==isoJour());
+    titre=archive?'Journée archivée':'Aujourd\'hui';
+    const court=dateDe(jourActif).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+    sous='<span class="d-long">'+esc(jourLong(jourActif))+'</span><span class="d-court">'+esc(court)+'</span>';
+  }else if(ongletActif==='histo'&&vueHisto==='analyses'){
+    titre='Analyses';sous='Température et gazages de chaque mûrisserie';
+  }else if(ongletActif==='histo'){
+    titre='Historique';sous='Toutes les journées enregistrées';
+  }else{
+    titre='Réglages';sous='Compte, synchronisation, jours chômés et sauvegarde';
+  }
+  t.textContent=titre;
+  st.innerHTML=sous;
+}
+/* Onglet surligné : « Analyses » est une vue de l'historique, mais a sa
+   propre entrée dans la navigation. */
+function majNavigation(){
+  const actif=ongletActif==='histo'?(vueHisto==='analyses'?'analyses':'histo'):ongletActif;
+  document.querySelectorAll('.onglet').forEach(function(b){
+    b.setAttribute('aria-selected',String(b.dataset.onglet===actif));
+  });
+  majEntete();
+}
+/* Passer d'une journée renseignée à l'autre sans repasser par l'historique. */
+function joursRenseignes(){
+  return Object.keys(journees).filter(function(k){return jourValide(k)&&journees[k]&&journees[k].length;}).sort();
+}
+function renderNavJour(){
+  const hote=document.getElementById('navJour');
+  if(!hote)return;
+  const auj=isoJour(),liste=joursRenseignes();
+  const avant=liste.filter(function(k){return k<jourActif;});
+  const prec=avant.length?avant[avant.length-1]:null;
+  const suiv=liste.filter(function(k){return k>jourActif&&k<=auj;})[0]||(jourActif<auj?auj:null);
+  const btn=function(iso,nom,lib){
+    return '<button type="button" class="ico-btn" '+(iso?'data-jour="'+iso+'"':'disabled')
+      +' title="'+esc(lib)+'" aria-label="'+esc(lib)+'">'+ico(nom)+'</button>';
+  };
+  hote.innerHTML=btn(prec,'precedent',prec?'Journée précédente : '+jourCourt(prec):'Aucune journée précédente')
+    +'<span class="nav-jour-lib">'+ico('calendrier')+'<b>'+esc(jourCourt(jourActif))+'</b>'
+    +(jourActif===auj?'<span class="jour-marque">aujourd\'hui</span>':'')+'</span>'
+    +btn(suiv,'ouvrir',suiv?'Journée suivante : '+jourCourt(suiv):'Aucune journée suivante')
+    +(jourActif!==auj?'<button type="button" class="bouton petit" data-jour="'+auj+'">Revenir à aujourd\'hui</button>':'');
+}/* Le lecteur doit savoir que cette feuille n'a pas été saisie par quelqu'un :
    elle décrit ce que les chambres font toutes seules. */
 function texteReconduction(iso){
   const l=journees[iso]||[];
@@ -1969,6 +2320,7 @@ function detailChambres(b){
   return m.join(', ');
 }
 function changerJour(iso){
+  if(!jourValide(iso))return;
   if(modifEnCours!==null&&!confirm('La modification en cours sera abandonnée. Continuer ?'))return;
   jourActif=iso;modifEnCours=null;
   if(!journees[jourActif])journees[jourActif]=[];
@@ -2001,9 +2353,9 @@ function sousTitreTuile(f){
   if(!f)return 'libre';
   const fam=ETATS[f.etat].famille;
   if(fam==='hs')return 'arrêt';
-  if(fam==='requis')return 'réquis.';
+  if(fam==='requis')return 'réq.';
   const c=f.conservation;
-  if(!c.type)return 'à définir';
+  if(!c.type)return 'à déf.';
   return c.temperature!==''?String(c.temperature).replace('.',',')+' °C':CONSERVATION[c.type].label.toLowerCase();
 }
 function renderRail(){
@@ -3889,23 +4241,21 @@ function majOngletJour(){
 var vueHisto='jours';
 function ouvrirVueHisto(nom){
   vueHisto=nom;
-  document.querySelectorAll('.sous-onglet').forEach(function(b){
-    b.setAttribute('aria-selected',String(b.dataset.vue===nom));
-  });
+  majNavigation();
   $('vue-jours').hidden=(nom!=='jours');
   $('vue-analyses').hidden=(nom!=='analyses');
   if(nom==='jours')renderHistorique();else renderAnalyses();
 }
-function ouvrirOnglet(nom){
+function ouvrirOnglet(nom,vue){
+  if(nom==='analyses'){nom='histo';vue='analyses';}
+  if(vue)vueHisto=vue;
   ongletActif=nom;
-  document.querySelectorAll('.onglet').forEach(function(b){
-    b.setAttribute('aria-selected',String(b.dataset.onglet===nom));
-  });
+  majNavigation();
   $('pane-jour').hidden=(nom!=='jour');
   $('pane-histo').hidden=(nom!=='histo');
   $('pane-reglages').hidden=(nom!=='reglages');
   if(nom==='histo')ouvrirVueHisto(vueHisto);
-  if(nom==='reglages'){renderStockage();renderCarteSync();renderCarteChomes();renderCarteInstall();renderInfosAppli();majActionsSauvegarde();}
+  if(nom==='reglages'){renderCarteCompte();renderStockage();renderCarteSync();renderCarteChomes();renderCarteInstall();renderInfosAppli();majActionsSauvegarde();}
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -4696,9 +5046,7 @@ function memoriserDroits(v){
 var authSurveillee=false;
 var authDemarree=false;      /* posé aussitôt : le SDK ne doit se charger qu'une fois */
 var authPrete=false;
-var brouillonNom='';
 var authErreur=null;
-var authOccupe=false;
 
 /* Firebase ne connaît que les adresses : on complète le nom d'utilisateur avec
    un domaine interne, jamais montré ni saisi. « marc » devient
@@ -4764,8 +5112,14 @@ function surveillerAuth(){
       /* une session anonyme héritée d'une version précédente n'a pas d'adresse :
          elle ne vaut plus rien, on la referme */
       if(u&&!u.email){window.firebase.auth().signOut();return;}
+      const avant=utilisateur;
       utilisateur=u?{email:u.email,uid:u.uid,nom:adresseVersNom(u.email)}:null;
       authPrete=true;
+      /* Un autre compte vient de se connecter sur cet appareil : ses droits
+         ne sont pas ceux du précédent, on les réévalue. */
+      if(utilisateur&&avant&&avant.uid!==utilisateur.uid){
+        detacherSync();lectureSeule=null;appliquerDroits();
+      }
       /* rôle connu de la dernière fois : appliqué avant même de joindre le
          serveur, pour qu'un lecteur ne dispose jamais d'une fenêtre de saisie */
       if(utilisateur&&lectureSeule===null){
@@ -4779,7 +5133,7 @@ function surveillerAuth(){
         detacherSync();lectureSeule=null;renderVerrou();
         setSyncStatus('off');
       }
-      renderCarteSync();
+      renderCarteSync();majIdentite();evaluerVerrou();
     });
   }).catch(function(err){
     authDemarree=false;
@@ -4787,6 +5141,7 @@ function surveillerAuth(){
     authErreur='Impossible de joindre le service de comptes. Vérifiez la connexion réseau.';
     console.error('Auth:',err);
     renderCarteSync();
+    authIndisponible();
   });
 }
 function ensureFirebaseReady(){
@@ -4794,30 +5149,19 @@ function ensureFirebaseReady(){
     if(!utilisateur)throw new Error('Connectez-vous avec votre compte pour synchroniser.');
   });
 }
-function seConnecter(nom,mdp){
-  if(!nomValide(nom)){
-    authErreur='Nom d\'utilisateur invalide : lettres, chiffres, point, tiret ou souligné.';
-    renderCarteSync();return Promise.resolve();
-  }
-  authOccupe=true;authErreur=null;renderCarteSync();
-  return ensureFirebaseApp().then(function(){
-    return window.firebase.auth().signInWithEmailAndPassword(nomVersAdresse(nom),mdp);
-  }).then(function(){
-    authOccupe=false;brouillonNom='';
-    toast('Connecté.');
-  }).catch(function(err){
-    authOccupe=false;authErreur=messageAuth(err);renderCarteSync();
-  });
-}
 function seDeconnecter(){
   demanderConfirmation({
     titre:'Se déconnecter',
     corps:'<p>Cet appareil cessera de recevoir et d\'envoyer les journées. '
       +'Les données déjà enregistrées ici sont conservées.</p>'
-      +'<p>Vous pourrez vous reconnecter avec le même nom d\'utilisateur.</p>',
+      +'<p>Vous pourrez vous reconnecter avec le même nom d\'utilisateur. '
+      +'Sans réseau, la reconnexion ne sera pas possible.</p>',
     okLabel:'Se déconnecter'
   }).then(function(ok){
     if(!ok)return;
+    /* l'empreinte du mot de passe gardée pour la connexion hors ligne part
+       avec la session */
+    oublierVerrou();ss(SESSION_OUVERTE,null);
     ensureFirebaseApp().then(function(){return window.firebase.auth().signOut();})
       .then(function(){toast('Déconnecté de cet appareil.');})
       .catch(function(err){authErreur=messageAuth(err);renderCarteSync();});
@@ -4859,7 +5203,8 @@ function changerMotDePasse(actuel,neuf){
        temps, et cela empêche de changer le mot de passe d'une session laissée
        ouverte sur un appareil qui traîne */
     const id=window.firebase.auth.EmailAuthProvider.credential(u.email,actuel);
-    return u.reauthenticateWithCredential(id).then(function(){return u.updatePassword(neuf);});
+    return u.reauthenticateWithCredential(id).then(function(){return u.updatePassword(neuf);})
+      .then(function(){return memoriserVerrou(u,neuf);});
   }).then(function(){
     authErreur=null;renderCarteSync();
     toast('Mot de passe changé. Il ne sera demandé qu\'à la prochaine connexion.');
@@ -4868,29 +5213,314 @@ function changerMotDePasse(actuel,neuf){
     toast(messageAuth(err));
   });
 }
-/* Bloc de connexion, affiché tant qu'aucun compte n'est ouvert. */
-function blocConnexion(){
-  if(!authPrete)return '<p class="aide">Vérification du compte…</p>';
-  return '<label class="champ"><span class="etiquette">Nom d\'utilisateur</span>'
-    +'<input type="text" id="champNom" autocomplete="username" autocapitalize="none"'
-    +' spellcheck="false" placeholder="prenom" value="'+esc(brouillonNom)+'"></label>'
-    +'<label class="champ"><span class="etiquette">Mot de passe</span>'
-    +'<input type="password" id="champMdp" autocomplete="current-password"></label>'
-    +'<div class="actions" style="border:0;padding-top:0;margin-top:10px">'
-    +'<button type="button" class="bouton" id="btnSeConnecter"'+(authOccupe?' disabled':'')+'>'
-    +(authOccupe?'Connexion…':'Se connecter')+'</button></div>'
-    +(authErreur?'<div class="err-sync">'+esc(authErreur)+'</div>':'')
-    +'<p class="aide" style="margin-top:12px">Mot de passe oublié : seul l\'administrateur peut '
-    +'en réattribuer un provisoire, à changer ensuite depuis cet écran.</p>';
+/* =========================================================================
+   ÉCRAN DE CONNEXION ET VERROUILLAGE
+   Comme dans Mehadrin QC, le mot de passe est demandé à chaque ouverture de
+   l'application, et au retour après DELAI_VERROU en arrière-plan. Un
+   aller-retour bref (un appel, l'appareil photo) ne redemande rien, pas plus
+   qu'un simple rechargement de la page.
+   La session Firebase reste ouverte en dessous : la synchronisation continue
+   pendant que l'écran est verrouillé. Hors réseau, le mot de passe se vérifie
+   sur l'appareil contre une empreinte PBKDF2 du dernier mot de passe accepté
+   par le serveur ; l'empreinte ne permet pas de retrouver le mot de passe et
+   disparaît à la déconnexion.
+   ========================================================================= */
+var CLE_VERROU='murisserie.verrou.v1';
+var SESSION_OUVERTE='murisserie.session';   /* uid déverrouillé pour cette ouverture */
+var SESSION_CACHEE='murisserie.cacheeA';    /* heure du passage en arrière-plan */
+var DELAI_VERROU=10*60*1000;
+var ITERATIONS_VERROU=150000;
+var deverrouille=false;
+var connexionEnCours=false;
+var etatConnexion={mode:'attente',erreur:'',occupe:false,autreCompte:false};
+
+function ss(cle,val){
+  try{
+    if(val===undefined)return sessionStorage.getItem(cle);
+    if(val===null)sessionStorage.removeItem(cle);else sessionStorage.setItem(cle,String(val));
+  }catch(e){/* stockage indisponible : le mot de passe sera redemandé */}
+  return null;
+}
+/* Lancement, et non simple rechargement : on oublie le déverrouillage. Certains
+   navigateurs restaurent la mémoire de session en rouvrant leurs onglets, on
+   ne s'y fie donc que pour un rechargement. */
+(function(){
+  let type='';
+  try{const n=performance.getEntriesByType('navigation')[0];type=n?n.type:'';}catch(e){}
+  if(type!=='reload')ss(SESSION_OUVERTE,null);
+})();
+
+function lireVerrou(){
+  try{const v=JSON.parse(localStorage.getItem(CLE_VERROU));return (v&&v.uid&&v.empreinte&&v.sel)?v:null;}
+  catch(e){return null;}
+}
+function oublierVerrou(){try{localStorage.removeItem(CLE_VERROU);}catch(e){}}
+function empreinteMdp(mdp,sel,iter){
+  if(!window.crypto||!window.crypto.subtle)return Promise.resolve(null);
+  try{
+    return window.crypto.subtle.importKey('raw',new TextEncoder().encode(mdp),'PBKDF2',false,['deriveBits'])
+      .then(function(k){return window.crypto.subtle.deriveBits(
+        {name:'PBKDF2',hash:'SHA-256',salt:base64ToBytes(sel),iterations:iter||ITERATIONS_VERROU},k,256);})
+      .then(function(b){return bytesToBase64(new Uint8Array(b));})
+      .catch(function(){return null;});
+  }catch(e){return Promise.resolve(null);}
+}
+function memoriserVerrou(u,mdp){
+  const sel=new Uint8Array(16);window.crypto.getRandomValues(sel);
+  const s=bytesToBase64(sel);
+  return empreinteMdp(mdp,s).then(function(e){
+    if(!e)return;
+    try{localStorage.setItem(CLE_VERROU,JSON.stringify({uid:u.uid,email:u.email,
+      nom:adresseVersNom(u.email),sel:s,empreinte:e,iter:ITERATIONS_VERROU}));}catch(x){}
+  });
+}
+function verifierVerrouLocal(mdp){
+  const v=lireVerrou();
+  if(!v)return Promise.resolve(false);
+  return empreinteMdp(mdp,v.sel,v.iter).then(function(e){return !!e&&e===v.empreinte;});
+}
+/* Le compte dont on parle sur cet appareil : la session Firebase, ou à défaut
+   (hors ligne) le dernier compte connecté. */
+function compteConnu(){
+  if(utilisateur)return{nom:utilisateur.nom,uid:utilisateur.uid,enLigne:true};
+  const v=lireVerrou();
+  return v?{nom:v.nom,uid:v.uid,enLigne:false}:null;
+}
+function prenomDe(nom){
+  const t=String(nom||'').split(/[._-]/)[0];
+  return t?t.charAt(0).toUpperCase()+t.slice(1):'';
+}
+
+function verrouiller(mode){
+  deverrouille=false;ss(SESSION_OUVERTE,null);
+  etatConnexion={mode:mode||'attente',erreur:'',occupe:false,autreCompte:false};
+  /* une fenêtre de confirmation ouverte n'a plus de sens sous le verrou */
+  if(!$('modale').hidden)fermerModale(false);
+  document.body.classList.add('verrouille');
+  $('ecranConnexion').hidden=false;
+  renderConnexion();
+}
+function deverrouiller(uid){
+  deverrouille=true;ss(SESSION_OUVERTE,uid||'');
+  connexionEnCours=false;
+  document.body.classList.remove('verrouille');
+  $('ecranConnexion').hidden=true;
+  $('cxCarte').innerHTML='';
+  majIdentite();majPuceSync();
+}
+/* Appelée à chaque changement de session : décide de ce que montre l'écran. */
+function evaluerVerrou(){
+  const e=etatConnexion;
+  if(connexionEnCours||e.occupe)return;
+  if(!deverrouille&&(e.mode==='salle'||e.mode==='oubli'||e.autreCompte))return;
+  if(utilisateur){
+    if(ss(SESSION_OUVERTE)===utilisateur.uid){if(!deverrouille)deverrouiller(utilisateur.uid);return;}
+    if(!deverrouille&&(e.mode==='deverrouillage'||e.mode==='horsligne')){
+      /* le serveur répond pendant que l'écran attend : on garde ce qui est tapé */
+      e.mode='deverrouillage';renderConnexion();return;
+    }
+    verrouiller('deverrouillage');
+  }else{
+    verrouiller('connexion');
+  }
+}
+/* Le service de comptes est injoignable (pas de réseau, ou SDK non chargé). */
+function authIndisponible(){
+  if(deverrouille)return;
+  const v=lireVerrou();
+  if(v&&ss(SESSION_OUVERTE)===v.uid){deverrouiller(v.uid);return;}
+  if(etatConnexion.mode==='horsligne'||etatConnexion.mode==='reseau')return;
+  verrouiller(v?'horsligne':'reseau');
+}
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden){ss(SESSION_CACHEE,Date.now());return;}
+  const h=Number(ss(SESSION_CACHEE))||0;
+  ss(SESSION_CACHEE,null);
+  if(deverrouille&&h&&Date.now()-h>=DELAI_VERROU)verrouiller(compteConnu()?'deverrouillage':'connexion');
+});
+
+function champCx(id,libelle,type,attrs){
+  return '<div class="cx-champ"><label for="'+id+'">'+libelle+'</label>'
+    +'<input id="'+id+'" type="'+type+'" '+(attrs||'')+'></div>';
+}
+function renderConnexion(){
+  const c=$('cxCarte');
+  if(!c)return;
+  /* ce qui est déjà tapé survit à un nouveau dessin de la carte */
+  const garde={};
+  ['cxNom','cxMdp','cxCode'].forEach(function(id){const el=$(id);if(el)garde[id]=el.value;});
+  const e=etatConnexion,compte=compteConnu();
+  const err=e.erreur?'<div class="cx-erreur" role="alert">'+ico('info')+'<span>'+esc(e.erreur)+'</span></div>':'';
+  const bouton=function(txt,occ){
+    return '<button type="submit" class="bouton cx-principal" id="cxOk"'+(e.occupe?' disabled':'')+'>'
+      +(e.occupe?'<span class="roue" aria-hidden="true"></span>'+occ:txt)+'</button>';
+  };
+  let h='';
+  if(e.mode==='attente'){
+    h='<div class="cx-attente"><span class="roue grande" aria-hidden="true"></span>'
+      +'<p id="cxTitre">Connexion au service…</p></div>';
+  }else if(e.mode==='connexion'){
+    h='<h2 id="cxTitre">Connexion</h2>'
+      +'<p class="cx-intro">Identifiez-vous avec le compte que vous a remis l\'administrateur.</p>'+err
+      +'<form id="cxForm" novalidate>'
+      +champCx('cxNom','Nom d\'utilisateur','text','autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="prenom"')
+      +champCx('cxMdp','Mot de passe','password','autocomplete="current-password"')
+      +bouton('Se connecter','Connexion…')+'</form>'
+      +'<div class="cx-liens"><button type="button" class="cx-lien" id="cxOubli">Mot de passe oublié ?</button>'
+      +(e.autreCompte&&compte?'<button type="button" class="cx-lien" id="cxRetour">'+ico('retour')
+        +'Revenir au compte '+esc(compte.nom)+'</button>':'')+'</div>';
+  }else if(e.mode==='deverrouillage'||e.mode==='horsligne'){
+    const nom=compte?compte.nom:'';
+    h='<h2 id="cxTitre">Bon retour'+(nom?', '+esc(prenomDe(nom)):'')+'</h2>'
+      +'<p class="cx-intro">Le mot de passe est demandé à chaque ouverture de l\'application.</p>'
+      +(e.mode==='horsligne'?'<div class="cx-note">'+ico('nuage')+'<span>Hors ligne : le mot de passe est vérifié '
+        +'sur cet appareil. La synchronisation reprendra au retour du réseau.</span></div>':'')+err
+      +'<form id="cxForm" novalidate>'
+      +'<div class="cx-compte"><span class="avatar">'+esc(prenomDe(nom).charAt(0)||'?')+'</span>'
+      +'<span><b>'+esc(nom)+'</b><small>'+(e.mode==='horsligne'?'Hors ligne':'Session ouverte sur cet appareil')+'</small></span></div>'
+      +'<input type="text" autocomplete="username" value="'+esc(nom)+'" hidden>'
+      +champCx('cxMdp','Mot de passe','password','autocomplete="current-password"')
+      +bouton('Déverrouiller','Vérification…')+'</form>'
+      +'<div class="cx-liens"><button type="button" class="cx-lien" id="cxOubli">Mot de passe oublié ?</button>'
+      +'<button type="button" class="cx-lien" id="cxAutre">Ce n\'est pas vous ? Changer de compte</button></div>';
+  }else if(e.mode==='oubli'){
+    h='<h2 id="cxTitre">Mot de passe oublié</h2>'
+      +'<p class="cx-intro">Les comptes sont gérés par l\'administrateur de l\'application : '
+      +'lui seul peut vous attribuer un nouveau mot de passe.</p>'
+      +'<ol class="cx-etapes"><li>Prévenez l\'administrateur, qui vous donne un <b>mot de passe provisoire</b> '
+      +'(console Firebase → Authentication).</li><li>Connectez-vous avec ce mot de passe provisoire.</li>'
+      +'<li>Remplacez-le aussitôt par le vôtre : <b>Réglages → Mon compte → Changer mon mot de passe</b>.</li></ol>'
+      +'<button type="button" class="bouton secondaire cx-principal" id="cxRetourOubli">'+ico('retour')+'Retour à la connexion</button>';
+  }else if(e.mode==='salle'){
+    h='<h2 id="cxTitre">Rejoindre votre équipe</h2>'
+      +'<p class="cx-intro">Saisissez le code de synchronisation de l\'équipe : il figure dans '
+      +'<b>Réglages → Synchronisation</b> sur un appareil déjà relié.</p>'+err
+      +'<form id="cxForm" novalidate>'
+      +champCx('cxCode','Code de l\'équipe','text','maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="8 caractères" class="cx-code"')
+      +bouton('Rejoindre l\'équipe','Connexion…')+'</form>'
+      +'<div class="cx-separateur"><span>ou</span></div>'
+      +'<button type="button" class="bouton secondaire cx-principal" id="cxCreer"'+(e.occupe?' disabled':'')+'>'
+      +ico('plus')+'Créer une nouvelle équipe</button>'
+      +'<div class="cx-liens centre"><button type="button" class="cx-lien" id="cxPlusTard">Continuer sans synchroniser</button></div>';
+  }else{ /* reseau */
+    h='<h2 id="cxTitre">Pas de connexion</h2>'
+      +'<p class="cx-intro">Le service de comptes est injoignable. La première connexion sur un appareil '
+      +'demande un accès à Internet ; ensuite, l\'application s\'ouvre aussi hors réseau.</p>'+err
+      +'<button type="button" class="bouton cx-principal" id="cxReessayer">'+ico('nuage')+'Réessayer</button>';
+  }
+  c.innerHTML=h;
+  Object.keys(garde).forEach(function(id){const el=$(id);if(el&&!el.value)el.value=garde[id];});
+  brancherConnexion();
 }
 function brancherConnexion(){
-  const e=$('champNom'),m=$('champMdp'),b=$('btnSeConnecter');
-  if(!e||!b)return;
-  e.addEventListener('input',function(ev){brouillonNom=ev.target.value;});
-  b.addEventListener('click',function(){seConnecter(e.value,m.value);});
-  m.addEventListener('keydown',function(ev){
-    if(ev.key==='Enter'){ev.preventDefault();ev.stopPropagation();seConnecter(e.value,m.value);}
+  const e=etatConnexion;
+  const f=$('cxForm');
+  if(f)f.addEventListener('submit',function(ev){
+    ev.preventDefault();
+    if(e.mode==='connexion')soumettreConnexion();
+    else if(e.mode==='salle')soumettreSalle();
+    else soumettreDeverrouillage();
   });
+  const lien=function(id,fn){const b=$(id);if(b)b.addEventListener('click',fn);};
+  lien('cxOubli',function(){e.modePrecedent=e.mode;e.mode='oubli';e.erreur='';renderConnexion();});
+  lien('cxRetourOubli',function(){e.mode=e.modePrecedent||'connexion';renderConnexion();});
+  lien('cxAutre',function(){e.autreCompte=true;e.mode='connexion';e.erreur='';renderConnexion();
+    const n=$('cxNom');if(n){n.value='';n.focus();}});
+  lien('cxRetour',function(){e.autreCompte=false;e.erreur='';e.mode=utilisateur?'deverrouillage':'horsligne';renderConnexion();});
+  lien('cxReessayer',function(){e.mode='attente';e.erreur='';renderConnexion();
+    authDemarree=false;authPrete=false;surveillerAuth();
+    setTimeout(function(){if(!authPrete&&!deverrouille&&etatConnexion.mode==='attente')authIndisponible();},10000);});
+  lien('cxCreer',function(){
+    e.occupe=true;e.erreur='';renderConnexion();
+    Promise.resolve(creerSalle()).then(function(){
+      e.occupe=false;toast('Nouvelle équipe créée. Code : '+syncCode);
+      deverrouiller(utilisateur&&utilisateur.uid);
+    }).catch(function(err){e.occupe=false;e.erreur=describeSyncError(err);renderConnexion();});
+  });
+  lien('cxPlusTard',function(){deverrouiller(utilisateur&&utilisateur.uid);
+    toast('Synchronisation à activer plus tard dans Réglages.');});
+  const cible=$('cxMdp')&&e.mode!=='connexion'?$('cxMdp'):($('cxNom')||$('cxCode'));
+  if(cible&&!cible.value)setTimeout(function(){try{cible.focus({preventScroll:true});}catch(x){}},60);
+}
+function soumettreConnexion(){
+  const e=etatConnexion;
+  const nom=($('cxNom').value||'').trim(),mdp=$('cxMdp').value||'';
+  if(!nomValide(nom)){e.erreur='Nom d\'utilisateur invalide : lettres, chiffres, point, tiret ou souligné.';renderConnexion();return;}
+  if(!mdp){e.erreur='Saisissez votre mot de passe.';renderConnexion();return;}
+  e.occupe=true;e.erreur='';connexionEnCours=true;renderConnexion();
+  ensureFirebaseApp().then(function(){
+    return window.firebase.auth().signInWithEmailAndPassword(nomVersAdresse(nom),mdp);
+  }).then(function(cred){
+    return memoriserVerrou(cred.user,mdp).then(function(){return cred.user;});
+  }).then(function(u){
+    e.occupe=false;e.autreCompte=false;
+    ss(SESSION_OUVERTE,u.uid);
+    /* première connexion sur cet appareil : il reste à rejoindre l'équipe */
+    if(!syncCode){e.mode='salle';e.erreur='';connexionEnCours=false;renderConnexion();return;}
+    deverrouiller(u.uid);
+    toast('Bienvenue, '+prenomDe(adresseVersNom(u.email))+'.');
+  }).catch(function(err){
+    connexionEnCours=false;e.occupe=false;
+    e.erreur=(err&&err.code)?messageAuth(err):'Connexion impossible : vérifiez l\'accès à Internet.';
+    renderConnexion();
+    const m=$('cxMdp');if(m){m.value='';m.focus();}
+  });
+}
+function soumettreDeverrouillage(){
+  const e=etatConnexion;
+  const mdp=$('cxMdp').value||'';
+  if(!mdp){e.erreur='Saisissez votre mot de passe.';renderConnexion();return;}
+  e.occupe=true;e.erreur='';renderConnexion();
+  const refuser=function(msg){
+    e.occupe=false;e.erreur=msg;renderConnexion();
+    const m=$('cxMdp');if(m){m.value='';m.focus();}
+  };
+  const local=function(){
+    return verifierVerrouLocal(mdp).then(function(ok){
+      if(ok){e.occupe=false;deverrouiller(lireVerrou().uid);return;}
+      refuser(lireVerrou()?'Mot de passe incorrect.'
+        :'Sans réseau, ce mot de passe ne peut pas encore être vérifié sur cet appareil. Connectez-vous une fois avec Internet.');
+    });
+  };
+  const u=window.firebase&&window.firebase.auth?window.firebase.auth().currentUser:null;
+  if(!u)return local();
+  const id=window.firebase.auth.EmailAuthProvider.credential(u.email,mdp);
+  u.reauthenticateWithCredential(id).then(function(){
+    return memoriserVerrou(u,mdp);
+  }).then(function(){
+    e.occupe=false;deverrouiller(u.uid);
+  }).catch(function(err){
+    const c=(err&&err.code)||'';
+    if(c==='auth/network-request-failed')return local();
+    refuser(messageAuth(err));
+  });
+}
+function soumettreSalle(){
+  const e=etatConnexion;
+  const code=($('cxCode').value||'').trim().toUpperCase();
+  if(!/^[A-Z2-9]{8}$/.test(code)){e.erreur='Le code comporte 8 caractères : lettres majuscules et chiffres.';renderConnexion();return;}
+  e.occupe=true;e.erreur='';renderConnexion();
+  ensureFirebaseReady().then(function(){return salleExiste(code);}).then(function(existe){
+    if(!existe)throw{message:'Aucune équipe n\'utilise ce code. Vérifiez-le auprès d\'un collègue.'};
+    reinitialiserEtatSalle();
+    syncCode=code;saveSyncSettings();
+    const memo=lireDroitsMemorises();
+    if(memo!==null){lectureSeule=memo;appliquerDroits();}
+    return connectSync();
+  }).then(function(){
+    e.occupe=false;etapeSync='repos';
+    deverrouiller(utilisateur&&utilisateur.uid);
+    toast('Appareil relié à l\'équipe '+code+'.');
+  }).catch(function(err){
+    e.occupe=false;
+    e.erreur=(err&&err.code)?describeSyncError(err):((err&&err.message)||'Connexion impossible.');
+    renderConnexion();
+  });
+}
+/* Une salle existe si son document de réglages a déjà été écrit : on évite
+   ainsi qu'une faute de frappe dans le code ne crée une équipe vide. */
+function salleExiste(code){
+  return firestoreDb.collection(COLLECTION_SYNC).doc(code).get().then(function(d){return d.exists;});
 }
 function generateSyncCode(){
   /* Tirage cryptographique : Math.random n'est pas fait pour produire des
@@ -5219,7 +5849,7 @@ function majActionsJournee(){
   });
 }
 function appliquerDroits(){
-  renderVerrou();renderPlan();renderJournees();majPuceSync();
+  renderVerrou();renderPlan();renderJournees();majPuceSync();majIdentite();
   if(ongletActif==='reglages'){renderCarteSync();renderCarteChomes();}
   majActionsSauvegarde();majActionsJournee();
 }
@@ -5463,9 +6093,9 @@ function renderCarteSync(){
   majPuceSync();
   const hote=$('carteSync');
   if(!hote)return;
-  /* la session est peut-être déjà ouverte : on la retrouve dès l'affichage
-     de la carte, même sans code de salle enregistré */
-  if(!authDemarree)surveillerAuth();
+  /* Le service de comptes est lancé une fois, au démarrage. Le relancer ici
+     à chaque affichage de la carte faisait boucler l'application hors ligne :
+     l'échec redessine la carte, qui relançait le chargement, qui échouait… */
   /* la sous-collection mensuelle doit être autorisée explicitement */
   /* La liste des adresses est la seule barrière qui compte : le fichier et le
      code de salle circulent, pas les comptes. */
@@ -5541,27 +6171,20 @@ function renderCarteSync(){
     +'l\'application n\'étant qu\'un premier filtre.'
     +'<div class="bloc-regles">'+esc(regles)+'</div></div></details>';
 
-  /* sans compte, rien d'autre à proposer que la connexion */
+  /* sans session (hors ligne), la synchronisation attend le retour du réseau */
   if(!utilisateur){
-    hote.innerHTML='<div class="ligne-info"><span>Compte</span><span class="val">Non connecté</span></div>'
-      +'<p class="aide" style="margin:12px 0 14px">La saisie, l\'impression et les exports fonctionnent sans compte. '
-      +'Seul le partage entre appareils demande de s\'identifier.</p>'
-      +blocConnexion()+aideProjet;
-    brancherConnexion();
+    hote.innerHTML='<div class="ligne-info"><span>État</span><span class="val">'
+      +(authPrete?'Hors ligne':'Connexion…')+'</span></div>'
+      +(syncCode?'<div class="ligne-info"><span>Code de la salle</span><span class="val num">'+esc(syncCode)+'</span></div>':'')
+      +'<p class="aide" style="margin:12px 0 0">La saisie continue sur cet appareil. Les journées partiront '
+      +'dès que le service de comptes sera de nouveau joignable.</p>'
+      +(authErreur?'<div class="err-sync">'+esc(authErreur)+'</div>':'')+aideProjet;
     return;
   }
   /* Les actions qui concernent le compte sont attachées à la ligne « Compte »
      et non à la barre du bas : elles doivent rester accessibles quel que soit
      l'état de la salle — sans code, en cours de saisie, ou synchronisée. */
-  const role=lectureSeule===true?'Lecture seule'
-    :(lectureSeule===false?'Saisie autorisée':'À déterminer');
-  const bandeauCompte='<div class="ligne-info"><span>Compte</span><span class="val">'+esc(utilisateur.nom)+'</span></div>'
-    +'<div class="ligne-info"><span>Droits sur cette salle</span><span class="val">'+role+'</span></div>'
-    +'<div class="actions-compte">'
-    +'<button type="button" class="lien" id="btnChangerMdp">Changer mon mot de passe</button>'
-    +'<button type="button" class="lien" id="btnSeDeconnecter">Se déconnecter</button>'
-    +'</div>';
-
+  const bandeauCompte='';
   if(etapeSync==='saisie'){
       hote.innerHTML=bandeauCompte
         +(syncCode?'<p class="desc" style="margin:0 0 12px">Cet appareil quittera la salle <strong>'
@@ -5575,7 +6198,6 @@ function renderCarteSync(){
         +(syncLastError?'<div class="err-sync">'+esc(syncLastError)+'</div>':'')
         +aideProjet;
       $('champCodeSync').addEventListener('input',function(e){brouillonCode=e.target.value.toUpperCase();});
-      brancherCompte();
       $('btnRejoindreSync').addEventListener('click',rejoindreSalle);
       $('btnAnnulerSaisie').addEventListener('click',function(){etapeSync='repos';syncLastError=null;renderCarteSync();});
       return;
@@ -5590,7 +6212,6 @@ function renderCarteSync(){
       +'</div>'
       +(syncLastError?'<div class="err-sync">'+esc(syncLastError)+'</div>':'')
       +aideProjet;
-    brancherCompte();
     $('btnCreerSync').addEventListener('click',creerSalle);
     $('btnSaisirSync').addEventListener('click',function(){etapeSync='saisie';brouillonCode='';syncLastError=null;renderCarteSync();});
     return;
@@ -5623,7 +6244,6 @@ function renderCarteSync(){
     +'<button type="button" class="bouton secondaire petit" id="btnSaisirSync">Saisir un autre code</button>'
     +'<button type="button" class="lien danger" id="btnDeconnecter">Désactiver sur cet appareil</button></div>'
     +aideProjet;
-  brancherCompte();
   $('btnReconnecter').addEventListener('click',function(){syncLastError=null;connectSync().catch(function(){});});
   $('btnCreerSync').addEventListener('click',function(){
     demanderConfirmation({
@@ -5660,7 +6280,7 @@ function creerSalle(){
   occuperBouton('btnCreerSync','Création…');
   syncLastError=null;
   const precedent=syncCode;
-  ensureFirebaseReady()
+  return ensureFirebaseReady()
     .then(function(){return generateUniqueSyncCode();})
     .then(function(code){
       reinitialiserEtatSalle();
@@ -5673,6 +6293,7 @@ function creerSalle(){
       syncCode=precedent||null;saveSyncSettings();
       setSyncStatus(precedent?'error':'off');
       renderCarteSync();
+      throw err;
     });
 }
 /* Les révisions et le registre des journées publiées appartiennent à une
@@ -5832,6 +6453,7 @@ document.addEventListener('keydown',function(e){
   if(e.key!=='Enter')return;
   const el=e.target;
   if(!el||el.tagName!=='INPUT'||el.type==='checkbox'||el.type==='radio')return;
+  if(el.closest('#ecranConnexion'))return;   /* un vrai formulaire : Entrée l'envoie */
   const bloc=el.closest('.saisie-calibre,.ajout-proj');
   if(bloc){
     const b=bloc.querySelector('button.bouton');
@@ -5879,7 +6501,14 @@ document.getElementById('btnViderJour').addEventListener('click',function(){
 
 /* ---- onglets ---- */
 document.querySelectorAll('.onglet').forEach(function(b){
-  b.addEventListener('click',function(){ouvrirOnglet(b.dataset.onglet);});
+  b.addEventListener('click',function(){
+    const o=b.dataset.onglet;
+    ouvrirOnglet(o,o==='histo'?'jours':undefined);
+  });
+});
+document.getElementById('navJour').addEventListener('click',function(e){
+  const b=e.target.closest('[data-jour]');
+  if(b&&jourValide(b.dataset.jour))changerJour(b.dataset.jour);
 });
 
 /* ---- modale ---- */
@@ -5985,12 +6614,26 @@ document.getElementById('liste-origines').innerHTML=
   ORIGINES.map(function(o){return '<option value="'+esc(o)+'">';}).join('');
 renderJournees();renderPlan();majEtapes();renderVerrou();majOngletJour();majPuceSync();
 document.getElementById('puceSync').addEventListener('click',function(){ouvrirOnglet('reglages');});
-window.addEventListener('online',majPuceSync);
+document.getElementById('blSync').addEventListener('click',function(){ouvrirOnglet('reglages');});
+window.addEventListener('online',function(){
+  majPuceSync();
+  /* le réseau revient après un échec du service de comptes : on réessaie */
+  if(!utilisateur&&!authDemarree){authPrete=false;surveillerAuth();}
+});
 window.addEventListener('offline',majPuceSync);
+/* L'écran de connexion se pose avant tout : rien de l'application ne doit
+   apparaître, même un instant, avant le mot de passe. Un simple rechargement
+   de la page, lui, ne redemande rien. */
+(function(){
+  const v=lireVerrou();
+  if(v&&ss(SESSION_OUVERTE)===v.uid)deverrouiller(v.uid);else verrouiller('attente');
+})();
+majIdentite();
+/* la session persiste : surveillerAuth rebranche la synchronisation dès que
+   le compte est retrouvé */
+surveillerAuth();
+setTimeout(function(){if(!authPrete&&!deverrouille&&etatConnexion.mode==='attente')authIndisponible();},10000);
 if(syncCode){
-  /* la session persiste : surveillerAuth rebranche la synchronisation dès que
-     le compte est retrouvé, ou affiche la demande de connexion sinon */
-  surveillerAuth();
   /* on laisse un premier instantané arriver : reconduire avant risquerait
      d'écraser un dimanche déjà créé et retouché sur un autre appareil */
   setTimeout(genererJoursChomes,4000);
